@@ -7,8 +7,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HomeroomController;
+use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\PromotionController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\UserController;
@@ -80,6 +83,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/meetings/{id}', [MeetingController::class, 'show'])->name('meetings.show');
     Route::post('/meetings/{id}/toggle', [MeetingController::class, 'toggleStatus'])->name('meetings.toggle');
 
+    // Route Dashboard GURU PIKET 
+    Route::get('/teacher/piket', [MeetingController::class, 'piketIndex'])->name('teacher.piket');
+
     // ROUTE KHUSUS SISWA
     Route::get('/scan', [AttendanceController::class, 'index'])->name('attendance.scan');
     Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
@@ -93,6 +99,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     
     Route::resource('schedules', ScheduleController::class);
 
+    Route::resource('leaves', LeaveRequestController::class);
+
+    Route::get('/homeroom', [HomeroomController::class, 'index'])->name('homeroom.index');
+    Route::post('/homeroom/leave/{id}', [HomeroomController::class, 'updateStatus'])->name('homeroom.update');
+
     // Route Manajemen Tahun Ajaran
     Route::resource('academic-years', AcademicYearController::class);
     Route::post('academic-years/{id}/set-active', [AcademicYearController::class, 'setActive'])->name('academic-years.set-active');
@@ -101,6 +112,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
     Route::post('/promotions', [PromotionController::class, 'process'])->name('promotions.process');
     Route::get('/api/students/{classroomId}', [PromotionController::class, 'getStudents']);
+  
+    // Route Laporan
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
     // ROUTE PROFILE (Bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -7,11 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class Classroom extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'latitude', 'longitude', 'radius_meters'];
+    protected $fillable = ['name', 'grade_level', 'homeroom_teacher_id', 'latitude', 'longitude', 'radius_meters'];
     
     // Relasi: 1 Kelas punya banyak Siswa
     public function students()
     {
         return $this->hasMany(User::class, 'classroom_id');
+    }
+
+    // Relasi Wali Kelas
+    public function homeroomTeacher()
+    {
+        return $this->belongsTo(User::class, 'homeroom_teacher_id');
+    }
+
+    // Relasi Anggota Rombel (History)
+    public function classMembers()
+    {
+        return $this->hasMany(ClassMember::class);
     }
 }

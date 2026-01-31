@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Classroom;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
@@ -15,7 +16,8 @@ class ClassroomController extends Controller
 
     public function create()
     {
-        return view('admin.classrooms.create');
+        $teachers = User::where('role', 'teacher')->get();
+        return view('admin.classrooms.create', compact('teachers'));
     }
 
     public function store(Request $request)
@@ -25,6 +27,8 @@ class ClassroomController extends Controller
             'latitude' => 'required', // Wajib diisi (dari peta)
             'longitude' => 'required',
             'radius_meters' => 'required|integer|min:10',
+            'grade_level' => 'required|integer|min:1|max:12',
+            'homeroom_teacher_id' => 'nullable|exists:users,id',
         ]);
 
         Classroom::create($request->all());
@@ -34,7 +38,8 @@ class ClassroomController extends Controller
 
     public function edit(Classroom $classroom)
     {
-        return view('admin.classrooms.edit', compact('classroom'));
+        $teachers = User::where('role', 'teacher')->get();
+        return view('admin.classrooms.edit', compact('classroom', 'teachers'));
     }
 
     public function update(Request $request, Classroom $classroom)
@@ -44,6 +49,8 @@ class ClassroomController extends Controller
             'latitude' => 'required',
             'longitude' => 'required',
             'radius_meters' => 'required|integer|min:10',
+            'grade_level' => 'required|integer|min:1|max:12',
+            'homeroom_teacher_id' => 'nullable|exists:users,id',
         ]);
 
         $classroom->update($request->all());

@@ -247,7 +247,13 @@
                                 <td class="text-center text-slate-400">
                                     {{ $index + 1 + ($users->currentPage() - 1) * $users->perPage() }}
                                 </td>
-                                <td class="font-medium text-slate-800">{{ $u->name }}</td>
+                                <td class="font-medium text-slate-800">{{ $u->name }}
+                                @if($u->is_piket)
+                                    <span class="inline-flex items-center bg-orange-100 text-orange-800 text-xs font-bold px-2 py-0.5 rounded mt-1 border border-orange-200">
+                                        <i class="fa-solid fa-shield-halved mr-1"></i> PIKET
+                                    </span>
+                                 @endif
+                                </td>
                                 <td class="text-center"><span class="badge-id">{{ $u->nip_nis ?? '-' }}</span></td>
                                 @if($type == 'student')
                                     <td class="text-center">

@@ -19,6 +19,8 @@ class User extends Authenticatable
     'role',      
     'nip_nis',
     'classroom_id',
+    'status', 
+    'is_piket' 
 ];
 
 public function classroom()

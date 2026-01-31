@@ -57,6 +57,7 @@ class UserController extends Controller
             'nip_nis' => $request->nip_nis,
             'classroom_id' => $request->role == 'student' ? $request->classroom_id : null,
             'password' => Hash::make('smakzie123'),
+            'is_piket' => $request->has('is_piket'), 
         ]);
 
         return redirect()->route('users.index', ['type' => $request->role])
@@ -83,6 +84,7 @@ class UserController extends Controller
             'email' => $request->email,
             'nip_nis' => $request->nip_nis,
             'classroom_id' => $user->role == 'student' ? $request->classroom_id : null,
+            'is_piket' => $request->has('is_piket'),    
         ]);
 
         if ($request->filled('password')) {

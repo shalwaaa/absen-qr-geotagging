@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Imports\UsersImport;
+use App\Models\AcademicYear;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Models\User;
 use App\Models\Classroom;
@@ -15,10 +16,30 @@ class UserController extends Controller
     public function index(Request $request)
     {
         $type = $request->query('type', 'student');
-        
         $search = $request->query('search');
+        $yearId = $request->query('year_id'); // Filter Tahun
 
+        // Ambil Tahun Aktif sebagai default jika tidak ada filter
+        $activeYear = AcademicYear::where('is_active', true)->first();
+        if (!$yearId && $activeYear) {
+            $yearId = $activeYear->id;
+        }
+
+        // QUERY UTAMA
         $query = User::where('role', $type);
+
+        if ($type == 'student' && $yearId) {
+            // FILTER ALA FOLDER:
+            // Ambil siswa yang PUNYA DATA di tabel class_members pada tahun yg dipilih
+            $query->whereHas('classMembers', function($q) use ($yearId) {
+                $q->where('academic_year_id', $yearId);
+            });
+            
+            // Eager Load data kelas pada tahun tersebut
+            $query->with(['classMembers' => function($q) use ($yearId) {
+                $q->where('academic_year_id', $yearId)->with('classroom');
+            }]);
+        }
 
         if ($search) {
             $query->where(function($q) use ($search) {
@@ -27,9 +48,10 @@ class UserController extends Controller
             });
         }
 
-        $users = $query->with('classroom')->latest()->paginate(10);
+        $users = $query->paginate(10);
+        $years = AcademicYear::orderBy('start_date', 'desc')->get(); // Untuk dropdown filter
 
-        return view('admin.users.index', compact('users', 'type', 'search'));
+        return view('admin.users.index', compact('users', 'type', 'search', 'years', 'yearId'));
     }
 
     public function create(Request $request)

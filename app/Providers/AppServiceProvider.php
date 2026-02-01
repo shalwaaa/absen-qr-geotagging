@@ -20,16 +20,16 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        // LOGIKA HYBRID:
-        // Kita cek URL browser saat ini (Current Request)
-        
-        // 1. Jika URL mengandung 'ngrok', berarti sedang diakses dari HP/Internet
-        if (str_contains(request()->getHost(), 'ngrok')) {
-            URL::forceScheme('https');
-        }
+        {
+            // Deteksi apakah sedang dibuka lewat Cloudflare atau Ngrok
+            $host = request()->getHost();
 
-        // 2. Jika URL adalah 127.0.0.1 atau localhost, dia akan melewati if di atas
-        // dan tetap menggunakan HTTP biasa (Mode Laptop).
-    }
+            if (str_contains($host, 'trycloudflare.com') || str_contains($host, 'ngrok-free.app')) {
+                // 1. Paksa semua Link/Route jadi HTTPS
+                URL::forceScheme('https');
+
+                // 2. Paksa Form Submission dianggap HTTPS (PENTING UNTUK MENGHILANGKAN PERINGATAN)
+                $this->app['request']->server->set('HTTPS', 'on');
+            }
+        }
 }

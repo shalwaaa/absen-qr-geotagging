@@ -14,4 +14,8 @@ class ClassMember extends Model
     public function student() { return $this->belongsTo(User::class, 'student_id'); }
     public function classroom() { return $this->belongsTo(Classroom::class); }
     public function academicYear() { return $this->belongsTo(AcademicYear::class); }
+    public function classMembers()
+    {
+        return $this->hasMany(ClassMember::class, 'student_id');
+    }
 }

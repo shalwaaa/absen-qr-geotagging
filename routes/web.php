@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AcademicYearController;
+use App\Http\Controllers\ApiSyncController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -116,6 +117,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route Laporan
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
+
+    // Route Sinkronisasi
+    Route::get('/sync-data', [ApiSyncController::class, 'index'])->name('sync.index');
+    Route::post('/sync-data', [ApiSyncController::class, 'sync'])->name('sync.process');
 
     // ROUTE PROFILE (Bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

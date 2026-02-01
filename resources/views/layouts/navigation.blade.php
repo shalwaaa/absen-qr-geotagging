@@ -246,13 +246,17 @@
                 <i class="fa-solid fa-calendar-days"></i> Jadwal Pelajaran
             </a>
 
-            <div class="sidebar-section">Akademik</div>
+            {{-- <div class="sidebar-section">Akademik</div>
             <a href="{{ route('academic-years.index') }}" class="sidebar-link {{ request()->routeIs('academic-years.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-calendar-check"></i> Tahun Ajaran
             </a>
             <a href="{{ route('promotions.index') }}" class="sidebar-link {{ request()->routeIs('promotions.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-arrow-up-right-from-square"></i> Kenaikan Kelas
-            </a>
+            </a> --}}
+                  <div class="sidebar-section">Sistem</div>
+        <a href="{{ route('sync.index') }}" class="sidebar-link {{ request()->routeIs('sync.*') ? 'active' : '' }}">
+            <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi API
+        </a>
             <div class="sidebar-section">Laporan</div>
             <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-file-lines"></i> Laporan Kehadiran

@@ -26,6 +26,25 @@
                     {{ session('error') }}
                 </div>
             @endif
+<button
+    onclick="hapusTahunKosong()"
+    style="background:#1b4332;color:white;border:none;padding:8px 14px;border-radius:6px">
+    🧹 Hapus Tahun Kosong
+</button>
+
+<form id="cleanup-form" action="{{ route('academic-years.cleanup') }}" method="POST" style="display:none;">
+    @csrf
+    @method('DELETE')
+</form>
+
+<script>
+function hapusTahunKosong() {
+    if (confirm('Yakin hapus semua tahun ajaran kosong?')) {
+        document.getElementById('cleanup-form').submit();
+    }
+}
+</script>
+
 
             <form action="{{ route('sync.process') }}" method="POST">
                 @csrf
@@ -44,6 +63,8 @@
                         *Tahun ajar otomatis digenerate dari 2020 s.d Tahun Depan.
                     </p>
                 </div>
+
+                
 
                 <div class="bg-yellow-50 p-4 rounded-xl mb-8 border border-yellow-100">
                     <h4 class="font-bold text-yellow-800 text-sm mb-2 flex items-center gap-2">

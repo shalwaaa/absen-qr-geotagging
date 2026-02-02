@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Presensi QR') }}</title>
+
+<title>Presensi SMAKZIE QR and Geotagging</title>
+<link rel="icon" type="image/png" href="{{ asset('images/logo3.png') }}">
+
+
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -414,7 +418,7 @@
             <div class="app-main-inner">
 
                 <div class="app-headbar">
-                    <div class="headbar-right">
+                    <div class="headbar-left">
                         <!-- Mobile Notification Bell -->
                         <div class="mobile-notification" id="notificationBell">
                             <i class="fa-solid fa-bell" style="color: var(--primary-fern); font-size: 1rem;"></i>

@@ -1,4 +1,7 @@
 <x-app-layout>
+    <!-- LOAD SELECT2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
     <style>
         /* Animasi */
         @keyframes fadeInUp {
@@ -8,7 +11,7 @@
         .animate-fade-in { animation: fadeInUp 0.4s ease-out; }
 
         /* Container Style */
-        .form-content { width: 100%; max-width: 100%; margin: 0; }
+        .form-content { width: 100%; max-width: 1000px; margin: 0 auto; }
         .form-header { margin-bottom: 40px; }
         .form-title { color: #4a6741; font-size: 22px; font-weight: 700; margin-bottom: 8px; }
         .form-subtitle { color: #64748b; font-size: 15px; line-height: 1.5; }
@@ -28,7 +31,7 @@
         .form-group { width: 100%; }
         .form-label { display: block; color: #4a6741; font-size: 15px; font-weight: 600; margin-bottom: 10px; }
         
-        .form-input, .form-select {
+        .form-input {
             width: 100%;
             height: 48px;
             padding: 12px 16px;
@@ -42,18 +45,9 @@
             box-sizing: border-box;
         }
 
-        .form-input:focus, .form-select:focus {
+        .form-input:focus {
             border-color: #4a6741;
             box-shadow: 0 0 0 4px rgba(74, 103, 65, 0.1);
-        }
-
-        /* Select Arrow */
-        .form-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 16px center;
-            background-size: 18px;
         }
 
         /* Form Actions */
@@ -101,13 +95,31 @@
             box-shadow: 0 4px 12px rgba(74, 103, 65, 0.2);
         }
 
+        /* --- CUSTOM STYLE SELECT2 (BIAR COCOK SAMA TEMA HIJAU) --- */
+        .select2-container .select2-selection--single {
+            height: 48px !important;
+            border: 1.5px solid #e2e8f0 !important;
+            border-radius: 10px !important;
+            display: flex; align-items: center;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #1e293b !important; font-size: 15px; padding-left: 16px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 46px !important; right: 10px !important;
+        }
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #4a6741 !important; color: white !important;
+        }
+        /* Fokus State */
+        .select2-container--default.select2-container--focus .select2-selection--single {
+            border-color: #4a6741 !important;
+            box-shadow: 0 0 0 4px rgba(74, 103, 65, 0.1);
+        }
+
         @media (max-width: 640px) {
             .input-grid-row { grid-template-columns: 1fr; }
             .form-actions { flex-direction: column-reverse; align-items: stretch; }
-        }
-
-        @media (min-width: 1200px) {
-            .form-content { max-width: 1000px; margin: 0 auto; }
         }
     </style>
 
@@ -133,9 +145,10 @@
                     @method('PUT')
 
                     <div class="form-layout">
+                        <!-- HARI (Select Biasa) -->
                         <div class="form-group">
                             <label class="form-label">Hari</label>
-                            <select name="day" class="form-select" required>
+                            <select name="day" class="form-input">
                                 @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'] as $day)
                                     <option value="{{ $day }}" {{ $schedule->day == $day ? 'selected' : '' }}>{{ $day }}</option>
                                 @endforeach
@@ -153,20 +166,22 @@
                             </div>
                         </div>
 
+                        <!-- GURU (SEARCHABLE) -->
                         <div class="form-group">
                             <label class="form-label">Guru Pengajar</label>
-                            <select name="teacher_id" class="form-select" required>
+                            <select name="teacher_id" class="select2 w-full" required>
                                 @foreach($teachers as $t)
                                     <option value="{{ $t->id }}" {{ $schedule->teacher_id == $t->id ? 'selected' : '' }}>
-                                        {{ $t->name }}
+                                        {{ $t->name }} ({{ $t->nip_nis }})
                                     </option>
                                 @endforeach
                             </select>
                         </div>
 
+                        <!-- MAPEL (SEARCHABLE) -->
                         <div class="form-group">
                             <label class="form-label">Mata Pelajaran</label>
-                            <select name="subject_id" class="form-select" required>
+                            <select name="subject_id" class="select2 w-full" required>
                                 @foreach($subjects as $s)
                                     <option value="{{ $s->id }}" {{ $schedule->subject_id == $s->id ? 'selected' : '' }}>
                                         {{ $s->name }}
@@ -175,9 +190,10 @@
                             </select>
                         </div>
 
+                        <!-- KELAS (SEARCHABLE) -->
                         <div class="form-group">
                             <label class="form-label">Kelas</label>
-                            <select name="classroom_id" class="form-select" required>
+                            <select name="classroom_id" class="select2 w-full" required>
                                 @foreach($classrooms as $c)
                                     <option value="{{ $c->id }}" {{ $schedule->classroom_id == $c->id ? 'selected' : '' }}>
                                         {{ $c->name }}
@@ -200,4 +216,20 @@
             </div>
         </div>
     </div>
+
+    <!-- LOAD JQUERY & SELECT2 JS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Aktifkan Select2
+            $('.select2').select2({
+                width: '100%',
+                placeholder: function(){
+                    $(this).data('placeholder');
+                }
+            });
+        });
+    </script>
 </x-app-layout>

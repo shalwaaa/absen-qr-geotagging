@@ -122,6 +122,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/sync-data', [ApiSyncController::class, 'index'])->name('sync.index');
     Route::post('/sync-data', [ApiSyncController::class, 'sync'])->name('sync.process');
 
+    // Route Hapus Tahun Ajaran Kosong
+    Route::delete('/admin/academic-year/cleanup', 
+    [ApiSyncController::class, 'deleteEmptyAcademicYears']
+    )->name('academic-years.cleanup');
+
     // ROUTE PROFILE (Bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

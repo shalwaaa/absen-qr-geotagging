@@ -15,7 +15,7 @@ class ApiSyncController extends Controller
 {
     public function index()
     {
-        $startYear = 2020;
+        $startYear = 2021;
         $endYear = date('Y') + 1;
 
         for ($y = $startYear; $y <= $endYear; $y++) {
@@ -63,36 +63,51 @@ class ApiSyncController extends Controller
 
     // --- LOGIKA PRIVATE ---
 
-    private function syncTeachers($year, $passwordHash)
+private function syncTeachers($year, $passwordHash)
 {
-    $response = Http::timeout(30)->get("https://zieapi.zielabs.id/api/getguru?tahun=" . $year);
+    $response = Http::timeout(30)->get(
+        "https://zieapi.zielabs.id/api/getguru?tahun=" . $year
+    );
 
     if ($response->successful()) {
-        $rawData = $response->json();
-        $teachers = $rawData['data'] ?? $rawData;
+        $teachers = $response->json()['data'] ?? [];
 
         foreach ($teachers as $d) {
+
             $nip = $d['nip'] ?? $d['nuptk'] ?? $d['id'];
 
-            $email = trim($d['email'] ?? '');
-            if ($email === '') {
-                $email = $nip . '@guru.sekolah.id';
+            // 1. Ambil email API
+            $apiEmail = strtolower(trim($d['email'] ?? ''));
+
+            // 2. Tentukan email final (ANTI BENTROK)
+            if ($apiEmail === '') {
+                $finalEmail = $nip . '@guru.sekolah.id';
+            } else {
+                $emailTerpakai = User::where('email', $apiEmail)
+                    ->where('nip_nis', '!=', $nip)
+                    ->exists();
+
+                $finalEmail = $emailTerpakai
+                    ? $nip . '@guru.sekolah.id'
+                    : $apiEmail;
             }
 
+            // 3. Update / Create
             User::updateOrCreate(
                 ['nip_nis' => $nip],
                 [
                     'name'     => $d['nama'],
-                    'email'    => $email,
+                    'email'    => $finalEmail,
                     'password' => $passwordHash,
                     'role'     => 'teacher',
                     'is_piket' => false,
-                    'status'   => 'active'
+                    'status'   => 'active',
                 ]
             );
         }
     }
 }
+
 
 
     private function syncClassrooms($year)
@@ -113,8 +128,8 @@ class ApiSyncController extends Controller
                     ['name' => $d['nama']], 
                     [
                         'grade_level' => $grade,
-                        'latitude' => -6.200000, 
-                        'longitude' => 106.816666,
+                        'latitude' => -6.82681, 
+                        'longitude' => 107.13714,
                         'radius_meters' => 50
                     ]
                 );
@@ -122,69 +137,85 @@ class ApiSyncController extends Controller
         }
     }
 
-    private function syncStudents($year, $academicYearId, $passwordHash)
+ private function syncStudents($year, $academicYearId, $passwordHash)
 {
-    $response = Http::timeout(120)->get("https://zieapi.zielabs.id/api/getsiswa?tahun=" . $year);
+    $response = Http::timeout(120)->get(
+        "https://zieapi.zielabs.id/api/getsiswa?tahun=" . $year
+    );
 
     if ($response->successful()) {
-        $students = $response->json()['data'] ?? [];
 
-        // Cache kelas ke memory
+        // 0️⃣ NONAKTIFKAN SEMUA SISWA DI TAHUN AJAR INI (ALUMNI / BELUM MASUK)
+        ClassMember::where('academic_year_id', $academicYearId)
+            ->update(['is_active' => false]);
+
+        $students = $response->json()['data'] ?? [];
         $classMap = Classroom::pluck('id', 'name')->toArray();
 
         foreach ($students as $d) {
 
-            $nis = $d['no_induk'];
-
-            // Cari kelas
-            $namaRombel  = $d['nama_rombel'];
+            $nis = trim($d['no_induk']);
+            $namaRombel = $d['nama_rombel'];
             $classroomId = $classMap[$namaRombel] ?? null;
 
-            // 🔒 NORMALISASI EMAIL (WAJIB)
-            $email = strtolower(trim($d['email'] ?? ''));
+            // EMAIL AMAN
+            $apiEmail = strtolower(trim($d['email'] ?? ''));
+            if ($apiEmail === '') {
+                $finalEmail = $nis . '@siswa.sekolah.id';
+            } else {
+                $emailTerpakai = User::where('email', $apiEmail)
+                    ->where('nip_nis', '!=', $nis)
+                    ->exists();
 
-            if ($email === '') {
-                $email = $nis . '@siswa.sekolah.id';
+                $finalEmail = $emailTerpakai
+                    ? $nis . '@siswa.sekolah.id'
+                    : $apiEmail;
             }
 
-            // Kalau email dipakai siswa lain → fallback
-            $emailExists = User::where('email', $email)
-                ->where('nip_nis', '!=', $nis)
-                ->exists();
-
-            if ($emailExists) {
-                $email = $nis . '@siswa.sekolah.id';
-            }
-
-            // ✅ UPDATE OR CREATE BERDASARKAN nip_nis
+            // USER (SEUMUR HIDUP)
             $user = User::updateOrCreate(
                 ['nip_nis' => $nis],
                 [
-                    'name'         => $d['nama'],
-                    'email'        => $email,
-                    'password'     => $passwordHash,
-                    'role'         => 'student',
+                    'name' => $d['nama'],
+                    'email' => $finalEmail,
+                    'password' => $passwordHash,
+                    'role' => 'student',
                     'classroom_id' => $classroomId,
-                    'status'       => 'active'
+                    'status' => 'active'
                 ]
             );
 
-            // History kelas
+            // HISTORY PER TAHUN
             if ($classroomId) {
                 ClassMember::updateOrCreate(
                     [
-                        'student_id'       => $user->id,
+                        'student_id' => $user->id,
                         'academic_year_id' => $academicYearId,
                     ],
                     [
-                        'classroom_id'          => $classroomId,
-                        'is_active'             => true,
+                        'classroom_id' => $classroomId,
+                        'is_active' => true, // AKTIF KARENA ADA DI API
                         'attendance_percentage' => 0
                     ]
                 );
             }
         }
     }
+}
+
+    public function deleteEmptyAcademicYears()
+{
+    DB::transaction(function () {
+
+        $emptyYears = AcademicYear::whereDoesntHave('classMembers')
+            ->get();
+
+        foreach ($emptyYears as $year) {
+            $year->delete();
+        }
+    });
+
+    return back()->with('success', 'Tahun ajaran kosong berhasil dihapus.');
 }
 
 }

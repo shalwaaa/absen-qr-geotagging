@@ -71,9 +71,6 @@
                 <span style="color: #E4EB9C;">Manajemen Data:</span> 
                 <span class="text-[#2D5128]">{{ $type == 'teacher' ? 'Guru' : 'Siswa' }}</span>
             </h2>
-            <span class="bg-[#f0fdf4] text-[#166534] text-xs font-bold px-3 py-1 rounded-full border border-[#bbf7d0]">
-                Total: {{ $users->total() }} Data
-            </span>
         </div>
     </x-slot>
 

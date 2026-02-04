@@ -21,8 +21,8 @@ class User extends Authenticatable
         'role',
         'nip_nis',
         'classroom_id',
-        'status',
-        'is_piket',
+        // 'status',
+        // 'is_piket',
     ];
 
     /**

@@ -400,7 +400,9 @@
         }
     </style>
 </head>
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <body>
+     
     <!-- Single Mobile Menu Toggle -->
     <button class="mobile-menu-toggle" id="mobileMenuToggle">
         <i class="fa-solid fa-bars"></i>
@@ -443,7 +445,7 @@
 
                 <div class="welcome-banner">
                     <div style="position: relative; z-index: 2;">
-                        @isset($header)
+                        @if(isset($header))
                             <h1 id="greeting" style="font-size: 1.8rem; font-weight: 800; margin: 0; letter-spacing: -0.02em;">
                                 Hi, {{ Auth::user()->name }}!
                             </h1>
@@ -453,7 +455,7 @@
                                     {{ $header }}
                                 </span>
                             </p>
-                        @endisset
+                        @endif
                     </div>
                 </div>
 

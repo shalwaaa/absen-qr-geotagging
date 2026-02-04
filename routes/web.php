@@ -118,19 +118,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
-    // Route Sinkronisasi
-    Route::get('/sync-data', [ApiSyncController::class, 'index'])->name('sync.index');
-    Route::post('/sync-data', [ApiSyncController::class, 'sync'])->name('sync.process');
-
-    // Route Hapus Tahun Ajaran Kosong
-    Route::delete('/admin/academic-year/cleanup', 
-    [ApiSyncController::class, 'deleteEmptyAcademicYears']
-    )->name('academic-years.cleanup');
+    // =================== ROUTE SINKRONISASI ===================
+    Route::prefix('sync')->group(function () {
+        // Halaman utama sinkronisasi
+        Route::get('/', [ApiSyncController::class, 'index'])->name('sync.index');
+        
+        // Proses sinkronisasi (POST request)
+        Route::post('/data', [ApiSyncController::class, 'sync'])->name('sync.data');
+        
+        // Progress tracking (AJAX)
+        Route::get('/progress', [ApiSyncController::class, 'progress'])->name('sync.progress');
+        
+        // Cleanup tahun kosong
+        Route::post('/cleanup', [ApiSyncController::class, 'cleanup'])->name('sync.cleanup');
+        
+        // Debug API
+        Route::get('/debug', [ApiSyncController::class, 'debugApi'])->name('sync.debug');
+    });
+    // =================== END ROUTE SINKRONISASI ===================
 
     // ROUTE PROFILE (Bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::post('/sync/quick', [ApiSyncController::class, 'quickSync'])->name('sync.quick');
 });
 
 require __DIR__.'/auth.php';

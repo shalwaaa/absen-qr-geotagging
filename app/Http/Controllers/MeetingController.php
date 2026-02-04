@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class MeetingController extends Controller
 {
@@ -134,5 +135,29 @@ public function store(Request $request)
         $meeting->is_active = !$meeting->is_active;
         $meeting->save();
         return back();
+    }
+
+        public function regenerateQr($id)
+    {
+        $meeting = Meeting::findOrFail($id);
+
+        // Validasi Keamanan (Hanya Guru ybs/Admin/Piket yg boleh ubah)
+        $user = Auth::user();
+        if ($meeting->schedule->teacher_id != $user->id && $user->role != 'admin' && $meeting->opened_by != $user->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        // 1. Ganti Token dengan yang baru
+        $newToken = Str::random(40);
+        $meeting->update(['qr_token' => $newToken]);
+
+        // 2. Render ulang QR Codenya
+        // Kita kirim balik HTML SVG dari QR Code tersebut
+        $qrCodeHtml = \SimpleSoftwareIO\QrCode\Facades\QrCode::size(280)->margin(1)->generate($newToken);
+
+        return response()->json([
+            'status' => 'success',
+            'qr_html' => (string) $qrCodeHtml
+        ]);
     }
 }

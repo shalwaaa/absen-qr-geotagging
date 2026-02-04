@@ -19,17 +19,19 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-        {
-            // Deteksi apakah sedang dibuka lewat Cloudflare atau Ngrok
-            $host = request()->getHost();
+public function boot(): void
+    {
+        // Deteksi apakah sedang dibuka lewat Cloudflare atau Ngrok
+        $host = request()->getHost();
 
-            if (str_contains($host, 'trycloudflare.com') || str_contains($host, 'ngrok-free.app')) {
-                // 1. Paksa semua Link/Route jadi HTTPS
-                URL::forceScheme('https');
+        // Cukup cek kata 'ngrok' atau 'cloudflare', tidak perlu akhiran .app/.dev
+        if (str_contains($host, 'trycloudflare') || str_contains($host, 'ngrok')) {
+            
+            // 1. Paksa semua Link/Route jadi HTTPS
+            URL::forceScheme('https');
 
-                // 2. Paksa Form Submission dianggap HTTPS (PENTING UNTUK MENGHILANGKAN PERINGATAN)
-                $this->app['request']->server->set('HTTPS', 'on');
-            }
+            // 2. Paksa Form Submission dianggap HTTPS
+            $this->app['request']->server->set('HTTPS', 'on');
         }
+    }
 }

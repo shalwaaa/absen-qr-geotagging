@@ -15,16 +15,6 @@
             background: #000;
         }
         
-        /* Overriding Html5Qrcode CSS */
-        #reader__dashboard_section_csr button {
-            background-color: #4a6741 !important;
-            color: white !important;
-            border-radius: 8px !important;
-            padding: 8px 16px !important;
-            font-weight: 600 !important;
-            border: none !important;
-        }
-
         .scan-frame {
             position: relative;
             background: white;
@@ -71,7 +61,7 @@
                 
                 <div class="text-center mb-6">
                     <h3 class="text-lg font-bold text-gray-800">Arahkan Kamera</h3>
-                    <p class="text-sm text-gray-500 mt-1">Posisikan kode QR tepat di dalam kotak pemindai</p>
+                    <p class="text-sm text-gray-500 mt-1">Jangan berpindah aplikasi saat proses scan.</p>
                 </div>
 
                 <div class="scan-frame mb-6">
@@ -90,11 +80,12 @@
 
                     <input type="hidden" id="latitude">
                     <input type="hidden" id="longitude">
+                    <input type="hidden" id="accuracy">
 
-                    <div class="bg-blue-50 p-4 rounded-2xl flex gap-3 items-start">
-                        <i class="fa-solid fa-circle-info text-blue-500 mt-1"></i>
-                        <p class="text-xs text-blue-700 leading-relaxed">
-                            Pastikan Anda berada di lingkungan sekolah dan izin lokasi (GPS) sudah diaktifkan agar absensi dapat diproses.
+                    <div class="bg-yellow-50 p-4 rounded-2xl flex gap-3 items-start">
+                        <i class="fa-solid fa-triangle-exclamation text-yellow-600 mt-1"></i>
+                        <p class="text-xs text-yellow-800 leading-relaxed">
+                            <strong>Peringatan:</strong> Jangan tutup browser atau pindah ke aplikasi lain (termasuk Fake GPS/VPN) saat di halaman ini, atau proses akan diulang.
                         </p>
                     </div>
                 </div>
@@ -107,10 +98,6 @@
                 </div>
 
             </div>
-
-            <p class="text-center text-gray-400 text-xs mt-6">
-                &copy; 2026 ClockIn Presence • Digital Geofencing
-            </p>
         </div>
     </div>
 
@@ -120,28 +107,70 @@
     <script>
         const statusContainer = document.getElementById('location-status-container');
         const statusText = document.getElementById('location-status');
+        let html5QrCode;
 
-        // A. Cek Izin Lokasi
+        // --- 1. FITUR ANTI-CHEAT (TAB SWITCH) ---
+        document.addEventListener("visibilitychange", function() {
+            if (document.hidden) {
+                // Jika user pindah tab/aplikasi, matikan kamera dan paksa reload
+                if(html5QrCode) {
+                    html5QrCode.stop().catch(err => {});
+                }
+                Swal.fire({
+                    title: "Terdeteksi Berpindah Aplikasi!",
+                    text: "Sistem mendeteksi Anda meninggalkan halaman ini. Untuk mencegah kecurangan, halaman akan dimuat ulang.",
+                    icon: "warning",
+                    confirmButtonColor: "#dc2626",
+                    confirmButtonText: "Muat Ulang",
+                    allowOutsideClick: false
+                }).then(() => {
+                    location.reload();
+                });
+            }
+        });
+
+        // --- 2. GET LOCATION DENGAN HIGH ACCURACY ---
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(successLocation, errorLocation, {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
+                enableHighAccuracy: true, // Wajib GPS asli
+                timeout: 10000,
+                maximumAge: 0 // Jangan pakai cache lokasi lama
             });
         } else {
-            Swal.fire("Incompatible", "Browser Anda tidak mendukung fitur lokasi.", "error");
+            Swal.fire("Error", "Browser Anda tidak mendukung fitur lokasi.", "error");
         }
 
         function successLocation(position) {
-            document.getElementById('latitude').value = position.coords.latitude;
-            document.getElementById('longitude').value = position.coords.longitude;
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const acc = position.coords.accuracy;
+
+            // Validasi Akurasi (Fake GPS seringkali punya akurasi aneh atau terlalu presisi)
+            // GPS asli biasanya punya akurasi 10-50 meter.
+            // Jika akurasi > 100 meter, anggap sinyal jelek/palsu.
+            if (acc > 200) {
+                statusText.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Akurasi GPS Buruk (' + Math.round(acc) + 'm)';
+                statusContainer.classList.remove('status-loading');
+                statusContainer.classList.add('status-error');
+                
+                Swal.fire({
+                    title: "Sinyal GPS Lemah",
+                    text: "Akurasi lokasi Anda " + Math.round(acc) + " meter. Cobalah pindah ke area terbuka.",
+                    icon: "warning"
+                });
+                return; 
+            }
+
+            document.getElementById('latitude').value = lat;
+            document.getElementById('longitude').value = lng;
+            document.getElementById('accuracy').value = acc;
             
             // Update UI Status
             statusContainer.classList.remove('status-loading');
             statusContainer.classList.add('status-success');
-            statusText.innerHTML = '<i class="fa-solid fa-location-dot"></i> Lokasi Terkunci';
+            statusText.innerHTML = '<i class="fa-solid fa-location-dot"></i> Lokasi Terkunci (Akurasi: ' + Math.round(acc) + 'm)';
             
-            // Nyalakan kamera setelah lokasi dapat
+            // Nyalakan kamera
             startScanner();
         }
 
@@ -149,34 +178,21 @@
             statusContainer.classList.remove('status-loading');
             statusContainer.classList.add('status-error');
             statusText.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Gagal Mengakses GPS';
-            
-            let msg = "Pastikan GPS aktif dan izin lokasi diberikan.";
-            if(err.code == 1) msg = "Izin lokasi ditolak oleh pengguna.";
-            
-            Swal.fire({
-                title: "Akses Lokasi Dibutuhkan",
-                text: msg,
-                icon: "warning",
-                confirmButtonColor: "#4a6741"
-            });
+            Swal.fire("Akses Lokasi Ditolak", "Wajib mengizinkan akses lokasi untuk absen.", "error");
         }
 
-        // B. Kamera
+        // --- 3. SCANNER ---
         function startScanner() {
-            const html5QrCode = new Html5Qrcode("reader");
-            const config = { 
-                fps: 15, 
-                qrbox: { width: 220, height: 220 },
-                aspectRatio: 1.0
-            };
+            html5QrCode = new Html5Qrcode("reader");
+            const config = { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 };
 
             html5QrCode.start(
                 { facingMode: "environment" },
                 config,
                 (decodedText) => {
                     html5QrCode.stop();
-                    // Feedback getaran jika di HP
-                    if (navigator.vibrate) navigator.vibrate(100);
+                    // Cegah klik ganda / scan ganda
+                    if (navigator.vibrate) navigator.vibrate(200);
                     processAttendance(decodedText);
                 },
                 (errorMessage) => {}
@@ -185,14 +201,20 @@
             });
         }
 
-        // C. Kirim Data
+        // --- 4. KIRIM DATA ---
         function processAttendance(token) {
             let lat = document.getElementById('latitude').value;
             let lng = document.getElementById('longitude').value;
             
+            // Cek lagi sebelum kirim
+            if(!lat || !lng) {
+                Swal.fire("Lokasi Hilang", "Mohon refresh halaman.", "error");
+                return;
+            }
+
             Swal.fire({ 
-                title: 'Mencatat Kehadiran...', 
-                html: 'Sistem sedang memvalidasi lokasi Anda.',
+                title: 'Memproses...', 
+                html: 'Jangan tutup halaman ini.',
                 allowOutsideClick: false,
                 didOpen: () => Swal.showLoading() 
             });
@@ -212,12 +234,12 @@
             })
             .then(async response => {
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.message || "Terjadi kesalahan sistem.");
+                if (!response.ok) throw new Error(data.message || "Terjadi kesalahan.");
                 return data;
             })
             .then(data => {
                 Swal.fire({
-                    title: "Berhasil Hadir!",
+                    title: "Berhasil!",
                     text: data.message,
                     icon: "success",
                     confirmButtonColor: "#4a6741"
@@ -228,7 +250,6 @@
                     title: "Gagal Absen",
                     text: error.message,
                     icon: "error",
-                    confirmButtonText: "Coba Lagi",
                     confirmButtonColor: "#dc2626"
                 }).then(() => location.reload());
             });

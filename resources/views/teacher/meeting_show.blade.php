@@ -62,13 +62,21 @@
                         </div>
                         
                         @if($meeting->is_active)
-                            <div class="p-4 bg-white border-2 border-green-100 rounded-2xl flex justify-center shadow-inner mb-6">
+                            <div id="qr-wrapper" class="p-4 bg-white border-2 border-green-100 rounded-2xl flex justify-center shadow-inner mb-6 transition-all duration-500">
+                                <!-- QR Code Awal -->
                                 {!! QrCode::size(280)->margin(1)->generate($meeting->qr_token) !!}
                             </div>
+                            
+                            <!-- Progress Bar Mundur (Visualisasi Ganti QR) -->
+                            <div class="w-full bg-gray-200 rounded-full h-1.5 mb-6 overflow-hidden">
+                                <div id="qr-progress" class="bg-green-500 h-1.5 rounded-full" style="width: 100%"></div>
+                            </div>
+
                             <div class="text-center mb-6">
                                 <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 animate-pulse">
                                     <span class="w-2 h-2 mr-2 rounded-full bg-green-500"></span> Sesi Aktif
                                 </span>
+                                <p class="text-xs text-gray-500 mt-2 italic">QR Code berubah otomatis setiap 30 detik (Anti-Cheat).</p>
                             </div>
                         @else
                             <div class="bg-gray-50 border-2 dashed border-gray-300 rounded-2xl h-64 flex flex-col items-center justify-center mb-6">
@@ -208,4 +216,60 @@
             </div>
         </div>
     </div>
+
+    <!-- Script Dynamic QR Code -->
+    @if($meeting->is_active)
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let timeLeft = 30; // Detik
+            const totalTime = 30;
+            const progressBar = document.getElementById('qr-progress');
+            const qrWrapper = document.getElementById('qr-wrapper');
+            
+            // 1. Fungsi Hitung Mundur (Visual)
+            setInterval(() => {
+                if(timeLeft > 0) {
+                    timeLeft--;
+                    let percentage = (timeLeft / totalTime) * 100;
+                    if(progressBar) progressBar.style.width = percentage + "%";
+                }
+            }, 1000);
+
+            // 2. Fungsi Ganti QR ke Server (AJAX)
+            setInterval(() => {
+                regenerateQR();
+            }, 30000); // 30000 ms = 30 Detik
+
+            function regenerateQR() {
+                // Efek loading tipis
+                qrWrapper.style.opacity = '0.5';
+
+                fetch("{{ route('meetings.regenerate', $meeting->id) }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Ganti gambar QR dengan yang baru dari server
+                        qrWrapper.innerHTML = data.qr_html;
+                        
+                        // Reset Waktu
+                        timeLeft = totalTime;
+                        if(progressBar) progressBar.style.width = "100%";
+                        
+                        // Kembalikan Opacity
+                        qrWrapper.style.opacity = '1';
+                        
+                        console.log("QR Code diperbarui!");
+                    }
+                })
+                .catch(error => console.error('Gagal refresh QR:', error));
+            }
+        });
+    </script>
+    @endif
 </x-app-layout>

@@ -118,6 +118,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
+    Route::post('/meetings/{id}/regenerate', [MeetingController::class, 'regenerateQr'])->name('meetings.regenerate');
+
     // =================== ROUTE SINKRONISASI ===================
     Route::prefix('sync')->group(function () {
         // Halaman utama sinkronisasi

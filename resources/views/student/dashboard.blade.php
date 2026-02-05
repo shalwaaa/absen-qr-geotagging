@@ -145,8 +145,8 @@
             <div class="welcome-banner px-8 py-6">
                 <div class="relative z-10 w-full flex flex-col md:flex-row justify-between items-center gap-6">
                     <div class="text-white">
-                        <h1 class="text-2xl font-bold opacity-90">Halo, {{ Auth::user()->name }}!</h1>
-                        <p class="text-sm opacity-75">Jangan lupa absen tepat waktu ya.</p>
+                        {{-- <h1 class="text-2xl font-bold opacity-90">Halo, {{ Auth::user()->name }}!</h1>
+                        <p class="text-sm opacity-75">Jangan lupa absen tepat waktu ya.</p> --}}
                     </div>
                     
                     <div class="clock-card">
@@ -211,8 +211,8 @@
                         </div>
                         <div>
                             <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Hadir Bulan Ini</p>
-                            <!-- Kamu bisa ganti angka statis ini dengan variabel PHP nanti -->
-                            <p class="text-3xl font-black text-[var(--dark-green)]">24</p>
+                            <!-- GANTI ANGKA 24 JADI VARIABEL -->
+                            <p class="text-3xl font-black text-[var(--dark-green)]">{{ $totalHadir }}</p>
                         </div>
                     </div>
 
@@ -223,7 +223,8 @@
                         </div>
                         <div>
                             <p class="text-[10px] uppercase font-bold text-gray-400 tracking-wider mb-1">Ketepatan</p>
-                            <p class="text-3xl font-black text-[var(--dark-green)]">98%</p>
+                            <!-- GANTI ANGKA 98% JADI VARIABEL -->
+                            <p class="text-3xl font-black text-[var(--dark-green)]">{{ $persentase }}%</p>
                         </div>
                     </div>
 

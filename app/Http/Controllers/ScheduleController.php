@@ -15,7 +15,7 @@ class ScheduleController extends Controller
         $schedules = Schedule::with(['teacher', 'subject', 'classroom'])
                              ->orderByRaw("FIELD(day, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
                              ->orderBy('start_time')
-                             ->get();
+                             ->paginate(10);
                              
         return view('admin.schedules.index', compact('schedules'));
     }

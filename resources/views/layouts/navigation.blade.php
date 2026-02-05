@@ -29,7 +29,7 @@
             border: 1px solid rgba(45, 81, 40, 0.15);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
             z-index: 1050;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             overflow-y: auto;
             overflow-x: hidden;
         }
@@ -109,7 +109,6 @@
             font-size: 0.95rem;
         }
 
-        /* --- INI KUNCI BIAR RAPI --- */
         .sidebar-link i {
             width: 30px; 
             display: inline-flex;
@@ -132,7 +131,7 @@
             box-shadow: 0 8px 20px rgba(45, 81, 40, 0.25);
         }
 
-        /* User Info (Saya update agar menampilkan NAMA USER bukan tanggal) */
+        /* User Info */
         .sidebar-user {
             background: #f8faf7;
             border-radius: 20px;
@@ -185,7 +184,7 @@
             letter-spacing: 0.05em;
         }
 
-        /* Logout Button (Kecil di sebelah nama) */
+        /* Logout Button */
         .btn-logout {
             margin-left: auto;
             color: #ef4444;
@@ -194,12 +193,21 @@
         }
         .btn-logout:hover { transform: scale(1.1); }
 
-        /* Responsive Logic */
+        /* Responsive Logic - FIXED */
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
-                left: 0; top: 0; height: 100vh; width: 300px;
-                border-radius: 0 24px 24px 0; border-left: none;
+                left: 0; 
+                top: 0; 
+                height: 100vh; 
+                width: 300px;
+                border-radius: 0 24px 24px 0; 
+                border-left: none;
+                padding-top: 80px;
+            }
+            
+            .sidebar.sidebar-open {
+                transform: translateX(0) !important;
             }
         }
     </style>
@@ -215,7 +223,6 @@
     </div>
 
     <nav class="sidebar-menu">
-        
         <!-- === MENU UMUM === -->
         <div class="sidebar-section">Utama</div>
         <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -246,33 +253,21 @@
                 <i class="fa-solid fa-calendar-days"></i> Jadwal Pelajaran
             </a>
 
-            {{-- <div class="sidebar-section">Akademik</div>
-            <a href="{{ route('academic-years.index') }}" class="sidebar-link {{ request()->routeIs('academic-years.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-calendar-check"></i> Tahun Ajaran
+            <div class="sidebar-section">Sistem</div>
+            <a href="{{ route('sync.index') }}" class="sidebar-link {{ request()->routeIs('sync.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi API
             </a>
-            <a href="{{ route('promotions.index') }}" class="sidebar-link {{ request()->routeIs('promotions.*') ? 'active' : '' }}">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i> Kenaikan Kelas
-            </a> --}}
-                  <div class="sidebar-section">Sistem</div>
-        <a href="{{ route('sync.index') }}" class="sidebar-link {{ request()->routeIs('sync.*') ? 'active' : '' }}">
-            <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi API
-        </a>
+            
             <div class="sidebar-section">Laporan</div>
             <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-file-lines"></i> Laporan Kehadiran
             </a>
         @endif
 
-
         <!-- === MENU GURU === -->
         @if(Auth::user()->role == 'teacher')
             <div class="sidebar-section">Aktifitas</div>
             
-            {{-- <a href="{{ route('teacher.dashboard') }}" class="sidebar-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
-                <i class="fa-solid fa-calendar-check"></i> Jadwal Saya
-            </a> --}}
-
-            <!-- Menu Khusus WALI KELAS (Logic: Cek apakah guru ini punya kelas) -->
             @php
                 $isHomeroom = \App\Models\Classroom::where('homeroom_teacher_id', Auth::id())->exists();
             @endphp
@@ -283,14 +278,12 @@
                 </a>
             @endif
 
-            <!-- Menu Khusus GURU PIKET -->
             @if(Auth::user()->is_piket)
                 <a href="{{ route('teacher.piket') }}" class="sidebar-link {{ request()->routeIs('teacher.piket') ? 'active' : '' }}">
                     <i class="fa-solid fa-shield-halved"></i> Menu Piket
                 </a>
             @endif
         @endif
-
 
         <!-- === MENU SISWA === -->
         @if(Auth::user()->role == 'student')
@@ -304,22 +297,17 @@
                 <i class="fa-solid fa-envelope-open-text"></i> Izin & Sakit
             </a>
         @endif
-
     </nav>
 
     <div class="sidebar-user">
-        <!-- Tanggal (Lingkaran Hijau) -->
         <div class="user-avatar">
             {{ date('d') }}
         </div>
         
-        <!-- Hari & Tahun (Teks) -->
         <div class="user-details">
-            <!-- Menampilkan Nama Hari (Senin, Selasa, dll) -->
             <span class="user-name">
                 {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('l') }}
             </span>
-            <!-- Menampilkan Bulan & Tahun -->
             <span class="user-role">
                 {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('F Y') }}
             </span>

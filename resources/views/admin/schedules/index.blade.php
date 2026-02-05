@@ -130,6 +130,129 @@
 
         .btn-delete { color: #dc2626; }
         .btn-delete:hover { background: #fee2e2; border-color: #fca5a5; }
+
+        /* 7. PAGINATION CUSTOM STYLES - SAMA DENGAN SEBELUMNYA */
+        .custom-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 16px;
+            border-top: 1px solid #f1f5f9;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            color: #64748b;
+            font-size: 13px;
+            margin-right: auto;
+            padding: 0 8px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            background: white;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .page-link:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .page-link.active {
+            background: #4a6741;
+            color: white;
+            border-color: #4a6741;
+            font-weight: 600;
+        }
+
+        .page-link.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
+
+        .page-link.disabled:hover {
+            transform: none;
+            background: #f8fafc;
+        }
+
+        .page-link.arrow {
+            min-width: 36px;
+            font-weight: 600;
+        }
+
+        /* Ellipsis for pagination */
+        .pagination-ellipsis {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* Mobile pagination styles */
+        @media (max-width: 768px) {
+            .custom-pagination {
+                justify-content: center;
+                gap: 6px;
+                padding: 16px 12px;
+            }
+            
+            .pagination-info {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 12px;
+                margin-right: 0;
+                order: 1;
+            }
+            
+            .page-link {
+                min-width: 32px;
+                height: 32px;
+                padding: 0 8px;
+                font-size: 12px;
+            }
+            
+            .pagination-links {
+                order: 2;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 4px;
+            }
+            
+            .page-link.hide-on-mobile {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-link.arrow {
+                min-width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+            
+            .pagination-info {
+                font-size: 12px;
+            }
+        }
     </style>
 
     <x-slot name="header">
@@ -169,7 +292,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($schedules as $s)
+                            @forelse ($schedules as $index => $s)
                             <tr>
                                 <td class="text-center">
                                     <span class="day-column">{{ $s->day }}</span>
@@ -233,6 +356,63 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- PAGINATION SECTION -->
+                @if($schedules->hasPages())
+                <div class="custom-pagination">
+                    <div class="pagination-info">
+                        Menampilkan {{ $schedules->firstItem() ?? 0 }} - {{ $schedules->lastItem() ?? 0 }} dari {{ $schedules->total() }}
+                    </div>
+                    
+                    <div class="pagination-links">
+                        {{-- Previous Page Link --}}
+                        @if ($schedules->onFirstPage())
+                            <span class="page-link arrow disabled">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $schedules->previousPageUrl() }}" class="page-link arrow">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        @php
+                            $current = $schedules->currentPage();
+                            $last = $schedules->lastPage();
+                            $dots = false;
+                        @endphp
+
+                        @for ($i = 1; $i <= $last; $i++)
+                            @if ($i == 1 || $i == $last || ($i >= $current - 1 && $i <= $current + 1))
+                                @if ($i == $current)
+                                    <span class="page-link active">{{ $i }}</span>
+                                @else
+                                    <a href="{{ $schedules->url($i) }}" 
+                                       class="page-link {{ ($i > 2 && $i < $last - 1) ? 'hide-on-mobile' : '' }}">
+                                        {{ $i }}
+                                    </a>
+                                @endif
+                                @php $dots = false; @endphp
+                            @elseif (!$dots)
+                                <span class="pagination-ellipsis hide-on-mobile">...</span>
+                                @php $dots = true; @endphp
+                            @endif
+                        @endfor
+
+                        {{-- Next Page Link --}}
+                        @if ($schedules->hasMorePages())
+                            <a href="{{ $schedules->nextPageUrl() }}" class="page-link arrow">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        @else
+                            <span class="page-link arrow disabled">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </span>
+                        @endif
+                    </div>
+                </div>
+                @endif
             </div>
 
             <div class="mt-6 flex items-center justify-center gap-6">

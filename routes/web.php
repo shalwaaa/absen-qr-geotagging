@@ -73,9 +73,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ));
         } 
         
-        else {
-            return view('student.dashboard');
-        }
+    else {
+        // --- LOGIC DATA DASHBOARD SISWA ---
+        
+        $userId = Auth::id();
+        $currentMonth = Carbon::now()->month;
+        $currentYear = Carbon::now()->year;
+
+        // 1. Hitung Total Hadir Bulan Ini (Status: Present)
+        $totalHadir = \App\Models\Attendance::where('student_id', $userId)
+                        ->where('status', 'present')
+                        ->whereMonth('scan_time', $currentMonth)
+                        ->whereYear('scan_time', $currentYear)
+                        ->count();
+
+        // 2. Hitung Ketepatan (Persentase Hadir vs Total Pertemuan)
+        // Kita anggap Total Pertemuan = Hadir + Sakit + Izin + Alpha
+        $totalPertemuan = \App\Models\Attendance::where('student_id', $userId)
+                        ->whereMonth('scan_time', $currentMonth)
+                        ->whereYear('scan_time', $currentYear)
+                        ->count();
+
+        // Hindari pembagian dengan nol
+        $persentase = $totalPertemuan > 0 
+            ? round(($totalHadir / $totalPertemuan) * 100) 
+            : 0;
+
+        return view('student.dashboard', compact('totalHadir', 'persentase'));
+    }
+    
     })->name('dashboard');
 
     // ROUTE KHUSUS GURU

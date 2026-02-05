@@ -1,203 +1,386 @@
 <x-app-layout>
     <style>
-        /* 1. Animasi */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-standard { animation: fadeIn 0.4s ease-out forwards; }
+        /* 1. Animasi Standar Dashboard */
+        @keyframes fadeInStandard {
+            from { 
+                opacity: 0; 
+                transform: translateY(10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
 
-        /* 2. Card & Header */
+        .animate-standard {
+            animation: fadeInStandard 0.4s ease-out forwards;
+        }
+
+        /* 2. Style Header & Card */
+        .header-section {
+            animation: fadeInStandard 0.4s ease-out;
+        }
+
         .custom-card {
-            background: white; border-radius: 16px; 
-            border: 1px solid #e2e8f0; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden;
+            border-radius: 16px !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            border: 1px solid #e2e8f0 !important;
+            overflow: hidden;
+            background: white;
+            animation: fadeInStandard 0.5s ease-out forwards;
         }
 
-        /* 3. Search & Filter Bar */
-        .toolbar {
-            display: flex; gap: 12px; align-items: center; 
-            margin-bottom: 24px; flex-wrap: wrap;
+        /* 3. Search Bar */
+        .search-wrapper {
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            padding: 4px;
+            height: 48px;
         }
-        
-        .search-box {
-            position: relative; flex: 1; min-width: 200px;
+
+        .search-wrapper:focus-within {
+            border-color: #4a6741;
+            ring: 2px rgba(74, 103, 65, 0.2);
         }
+
         .search-input {
-            width: 100%; padding: 10px 10px 10px 40px;
-            border-radius: 10px; border: 1px solid #e2e8f0;
-            font-size: 14px; outline: none; transition: 0.2s;
+            border: none;
+            background: transparent;
+            padding-left: 2.5rem;
+            width: 100%;
+            font-size: 14px;
         }
-        .search-input:focus { border-color: #4a6741; box-shadow: 0 0 0 3px rgba(74, 103, 65, 0.1); }
-        .search-icon { position: absolute; left: 14px; top: 13px; color: #94a3b8; }
 
-        .filter-select {
-            padding: 10px 30px 10px 14px; border-radius: 10px; border: 1px solid #e2e8f0;
-            font-size: 14px; outline: none; cursor: pointer; color: #475569;
-            background: white; transition: 0.2s; height: 42px;
+        .search-input:focus { outline: none; box-shadow: none; }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            color: #94a3b8;
         }
-        .filter-select:focus { border-color: #4a6741; }
 
         /* 4. Buttons */
         .btn-primary {
-            background: #4a6741; color: white; border-radius: 10px;
-            padding: 10px 20px; font-weight: 600; font-size: 14px;
-            display: inline-flex; align-items: center; gap: 8px;
-            transition: 0.2s; border: none; cursor: pointer; text-decoration: none;
+            background: #4a6741;
+            color: white;
+            border-radius: 12px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 0 20px;
+            height: 48px;
+            font-size: 14px;
+            border: none;
         }
-        .btn-primary:hover { background: #3d5535; transform: translateY(-1px); }
 
-        .import-form { display: flex; align-items: center; gap: 8px; background: white; padding: 4px; border: 1px solid #e2e8f0; border-radius: 10px; }
-        .file-input { font-size: 12px; width: 180px; }
+        .btn-primary:hover {
+            background: #3d5535;
+            transform: translateY(-1px);
+        }
 
-        /* 5. Table */
-        .modern-table { width: 100%; border-collapse: collapse; }
-        .modern-table th { background: #f8fafc; color: #64748b; font-weight: 700; text-transform: uppercase; font-size: 11px; padding: 14px 16px; text-align: left; border-bottom: 1px solid #e2e8f0; }
-        .modern-table td { padding: 14px 16px; color: #334155; border-bottom: 1px solid #f1f5f9; font-size: 14px; vertical-align: middle; }
-        .modern-table tr:hover { background: #fcfdfa; }
+        /* 5. Import Zone */
+        .import-zone {
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            height: 48px;
+            overflow: hidden;
+        }
 
-        /* Badges */
-        .badge-id { background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 12px; }
-        .badge-class { background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; }
-        .badge-piket { background: #ffedd5; color: #9a3412; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 800; border: 1px solid #fed7aa; margin-left: 8px; text-transform: uppercase; }
+        .file-input {
+            font-size: 12px;
+            padding: 0 10px;
+            cursor: pointer;
+        }
 
-        /* Actions */
-        .action-btn { width: 32px; height: 32px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #e2e8f0; transition: 0.2s; background: white; color: #64748b; }
-        .action-btn:hover { border-color: #cbd5e1; color: #334155; transform: scale(1.05); }
-        .text-red:hover { color: #ef4444; border-color: #fca5a5; background: #fef2f2; }
-        .text-orange:hover { color: #f59e0b; border-color: #fcd34d; background: #fffbeb; }
+        /* 6. Table Styling */
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .modern-table thead {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .modern-table thead th {
+            color: #64748b;
+            font-weight: 600;
+            text-transform: uppercase;
+            padding: 16px;
+            font-size: 11px;
+            letter-spacing: 0.05em;
+        }
+
+        .modern-table tbody tr {
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s ease;
+        }
+
+        .modern-table tbody tr:hover {
+            background: #f1f5f9;
+        }
+
+        .modern-table tbody td {
+            padding: 16px;
+            color: #334155;
+            font-size: 14px;
+        }
+
+        /* 7. Badges */
+        .badge-id {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #f1f5f9;
+            color: #475569;
+            font-family: monospace;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .badge-class {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #eef2ff;
+            color: #4338ca;
+            font-weight: 600;
+            font-size: 11px;
+            border-radius: 6px;
+        }
+
+        /* 8. Action Buttons */
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+
+        .btn-edit { color: #d97706; }
+        .btn-edit:hover { background: #fef3c7; }
+        .btn-delete { color: #dc2626; }
+        .btn-delete:hover { background: #fee2e2; }
+
+        /* 9. PAGINATION CUSTOM STYLES */
+        .custom-pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 16px;
+            border-top: 1px solid #f1f5f9;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .pagination-info {
+            color: #64748b;
+            font-size: 13px;
+            margin-right: auto;
+            padding: 0 8px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            background: white;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .page-link:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            transform: translateY(-1px);
+        }
+
+        .page-link.active {
+            background: #4a6741;
+            color: white;
+            border-color: #4a6741;
+            font-weight: 600;
+        }
+
+        .page-link.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
+
+        .page-link.disabled:hover {
+            transform: none;
+            background: #f8fafc;
+        }
+
+        .page-link.arrow {
+            min-width: 36px;
+            font-weight: 600;
+        }
+
+        /* Ellipsis for pagination */
+        .pagination-ellipsis {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            height: 36px;
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        /* Mobile pagination styles */
+        @media (max-width: 768px) {
+            .flex-col-mobile { flex-direction: column; width: 100%; }
+            
+            .custom-pagination {
+                justify-content: center;
+                gap: 6px;
+                padding: 16px 12px;
+            }
+            
+            .pagination-info {
+                width: 100%;
+                text-align: center;
+                margin-bottom: 12px;
+                margin-right: 0;
+                order: 1;
+            }
+            
+            .page-link {
+                min-width: 32px;
+                height: 32px;
+                padding: 0 8px;
+                font-size: 12px;
+            }
+            
+            .pagination-links {
+                order: 2;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 4px;
+            }
+            
+            .page-link.hide-on-mobile {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .page-link.arrow {
+                min-width: 28px;
+                height: 28px;
+                font-size: 11px;
+            }
+            
+            .pagination-info {
+                font-size: 12px;
+            }
+        }
     </style>
 
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-bold text-xl text-gray-800">
-                <span style="color: #E4EB9C;">Manajemen Data:</span> 
-                <span class="text-[#2D5128]">{{ $type == 'teacher' ? 'Guru' : 'Siswa' }}</span>
-            </h2>
+        <div class="flex items-center justify-between header-section">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    <span style="color: #E4EB9C; font-weight: 800;">
+                        {{ $type == 'teacher' ? 'Manajemen Guru' : 'Manajemen Siswa' }}
+                    </span>
+                </h2>
+                <p class="text-sm text-slate-500 mt-1">
+                    {{ $users->total() }} {{ $type == 'teacher' ? 'guru' : 'siswa' }} terdaftar
+                </p>
+            </div>
         </div>
     </x-slot>
 
     <div class="py-8 px-4 sm:px-6 lg:px-8 animate-standard">
         <div class="max-w-7xl mx-auto">
 
-            <!-- TOOLBAR: SEARCH, FILTER, IMPORT, ADD -->
-            <div class="toolbar">
+            <div class="flex flex-col lg:flex-row justify-between items-center gap-4 mb-6">
                 
-                <!-- 1. SEARCH -->
-                <form method="GET" action="{{ route('users.index') }}" class="search-box">
+                <form method="GET" action="{{ route('users.index') }}" class="w-full lg:flex-1">
                     <input type="hidden" name="type" value="{{ $type }}">
-                    @if(isset($yearId)) <input type="hidden" name="year_id" value="{{ $yearId }}"> @endif
-                    
-                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                    <input type="text" name="search" value="{{ $search }}" 
-                           placeholder="Cari nama atau nomor induk..." 
-                           class="search-input" onchange="this.form.submit()">
+                    <div class="relative search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" name="search" value="{{ $search }}" 
+                               placeholder="Cari..." class="search-input">
+                    </div>
                 </form>
 
-                <!-- 2. FILTER TAHUN (HANYA MUNCUL DI DATA SISWA) -->
-                @if($type == 'student')
-                    <form method="GET" action="{{ route('users.index') }}">
-                        <input type="hidden" name="type" value="student">
-                        @if($search) <input type="hidden" name="search" value="{{ $search }}"> @endif
-                        
-                        <div class="flex items-center gap-2">
-                            <select name="year_id" onchange="this.form.submit()" class="filter-select" title="Pilih Folder Tahun">
-                                <option value="">-- Semua Data --</option>
-                                @foreach($years as $y)
-                                    <option value="{{ $y->id }}" {{ $yearId == $y->id ? 'selected' : '' }}>
-                                        📂 {{ $y->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
+                <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+                    <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data" class="import-zone flex-1 lg:flex-none">
+                        @csrf
+                        <input type="hidden" name="type" value="{{ $type }}">
+                        <input type="file" name="file" class="file-input" required>
+                        <button type="submit" class="btn-primary" style="height: 100%; border-radius: 0;">
+                            <i class="fa-solid fa-upload"></i> Import
+                        </button>
                     </form>
-                @endif
 
-                <div class="flex-1"></div> <!-- Spacer -->
-
-                <!-- 3. IMPORT EXCEL -->
-                <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data" class="import-form">
-                    @csrf
-                    <input type="hidden" name="type" value="{{ $type }}">
-                    <input type="file" name="file" class="file-input" required>
-                    <button type="submit" class="text-xs font-bold text-[#4a6741] px-3 py-2 hover:bg-gray-50 rounded">
-                        <i class="fa-solid fa-file-import"></i> Import
-                    </button>
-                </form>
-
-                <!-- 4. TAMBAH MANUAL -->
-                <a href="{{ route('users.create', ['type' => $type]) }}" class="btn-primary">
-                    <i class="fa-solid fa-plus"></i> Tambah
-                </a>
+                    <a href="{{ route('users.create', ['type' => $type]) }}" class="btn-primary flex-1 lg:flex-none">
+                        <i class="fa-solid fa-plus"></i> Tambah
+                    </a>
+                </div>
             </div>
 
-            <!-- TABLE -->
             <div class="custom-card">
                 <div class="overflow-x-auto">
                     <table class="modern-table">
                         <thead>
                             <tr>
-                                <th width="50" class="text-center">No</th>
-                                <th>Nama Lengkap</th>
-                                <th width="150" class="text-center">{{ $type == 'teacher' ? 'NIP' : 'NIS' }}</th>
-                                
-                                @if($type == 'student') 
-                                    <th width="200" class="text-center">Kelas (History)</th> 
-                                @endif
-                                
-                                <th width="120" class="text-center">Aksi</th>
+                                <th class="text-center" style="width: 50px;">No</th>
+                                <th class="text-left">Nama</th>
+                                <th class="text-center">{{ $type == 'teacher' ? 'NIP' : 'NIS' }}</th>
+                                @if($type == 'student') <th class="text-center">Kelas</th> @endif
+                                <th class="text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody>
                             @forelse ($users as $index => $u)
                             <tr>
-                                <td class="text-center text-gray-400 font-mono">
+                                <td class="text-center text-slate-400">
                                     {{ $index + 1 + ($users->currentPage() - 1) * $users->perPage() }}
                                 </td>
-                                
-                                <!-- Nama -->
-                                <td>
-                                    <span class="font-bold text-gray-800">{{ $u->name }}</span>
-                                    @if($u->is_piket)
-                                        <span class="badge-piket">PIKET</span>
-                                    @endif
-                                </td>
-
-                                <!-- NIP/NIS -->
-                                <td class="text-center">
-                                    <span class="badge-id">{{ $u->nip_nis ?? '-' }}</span>
-                                </td>
-
-                                <!-- Logic Kelas History (Khusus Siswa) -->
+                                <td class="font-medium text-slate-800">{{ $u->name }}</td>
+                                <td class="text-center"><span class="badge-id">{{ $u->nip_nis ?? '-' }}</span></td>
                                 @if($type == 'student')
                                     <td class="text-center">
-                                        @php
-                                            // Cari data kelas di tahun yang dipilih
-                                            $history = null;
-                                            if($yearId && $u->classMembers) {
-                                                $history = $u->classMembers->where('academic_year_id', $yearId)->first();
-                                            }
-                                        @endphp
-
-                                        @if($history)
-                                            <span class="badge-class">{{ $history->classroom->name }}</span>
-                                        @elseif($u->classroom) 
-                                            <!-- Fallback: Tampilkan kelas master jika history belum ada -->
-                                            <span class="badge-class bg-gray-100 text-gray-500">{{ $u->classroom->name }}</span>
-                                        @else
-                                            <span class="text-xs text-gray-400">-</span>
-                                        @endif
+                                        <span class="badge-class">{{ $u->classroom->name ?? '-' }}</span>
                                     </td>
                                 @endif
-
-                                <!-- Aksi -->
                                 <td class="text-center">
                                     <div class="flex justify-center gap-2">
-                                        <a href="{{ route('users.edit', ['user' => $u->id, 'type' => $type]) }}" class="action-btn text-orange" title="Edit">
+                                        <a href="{{ route('users.edit', ['user' => $u->id, 'type' => $type]) }}" class="btn-action btn-edit">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </a>
-                                        
-                                        <form action="{{ route('users.destroy', $u->id) }}" method="POST" onsubmit="return confirm('Yakin hapus data ini?')">
+                                        <form action="{{ route('users.destroy', $u->id) }}" method="POST" onsubmit="return confirm('Hapus data?')">
                                             @csrf @method('DELETE')
                                             <input type="hidden" name="type" value="{{ $type }}">
-                                            <button type="submit" class="action-btn text-red" title="Hapus">
+                                            <button type="submit" class="btn-action btn-delete">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </form>
@@ -206,12 +389,7 @@
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="{{ $type == 'student' ? 5 : 4 }}" class="text-center py-16 text-gray-400">
-                                    <div class="flex flex-col items-center">
-                                        <i class="fa-regular fa-folder-open text-4xl mb-2 text-gray-300"></i>
-                                        <p>Data tidak ditemukan.</p>
-                                    </div>
-                                </td>
+                                <td colspan="5" class="py-12 text-center text-slate-400">Data tidak ditemukan</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -219,12 +397,61 @@
                 </div>
 
                 @if($users->hasPages())
-                    <div class="p-4 border-t border-gray-100 bg-gray-50">
-                        {{ $users->appends(['type' => $type, 'search' => $search, 'year_id' => $yearId])->links() }}
+                <div class="custom-pagination">
+                    <div class="pagination-info">
+                        Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }}
                     </div>
+                    
+                    <div class="pagination-links">
+                        {{-- Previous Page Link --}}
+                        @if ($users->onFirstPage())
+                            <span class="page-link arrow disabled">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $users->previousPageUrl() }}&type={{ $type }}&search={{ $search }}" class="page-link arrow">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Pagination Elements --}}
+                        @php
+                            $current = $users->currentPage();
+                            $last = $users->lastPage();
+                            $dots = false;
+                        @endphp
+
+                        @for ($i = 1; $i <= $last; $i++)
+                            @if ($i == 1 || $i == $last || ($i >= $current - 1 && $i <= $current + 1))
+                                @if ($i == $current)
+                                    <span class="page-link active">{{ $i }}</span>
+                                @else
+                                    <a href="{{ $users->url($i) }}&type={{ $type }}&search={{ $search }}" 
+                                       class="page-link {{ ($i > 2 && $i < $last - 1) ? 'hide-on-mobile' : '' }}">
+                                        {{ $i }}
+                                    </a>
+                                @endif
+                                @php $dots = false; @endphp
+                            @elseif (!$dots)
+                                <span class="pagination-ellipsis hide-on-mobile">...</span>
+                                @php $dots = true; @endphp
+                            @endif
+                        @endfor
+
+                        {{-- Next Page Link --}}
+                        @if ($users->hasMorePages())
+                            <a href="{{ $users->nextPageUrl() }}&type={{ $type }}&search={{ $search }}" class="page-link arrow">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        @else
+                            <span class="page-link arrow disabled">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </span>
+                        @endif
+                    </div>
+                </div>
                 @endif
             </div>
-
         </div>
     </div>
 </x-app-layout>

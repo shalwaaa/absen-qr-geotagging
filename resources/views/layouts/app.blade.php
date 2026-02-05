@@ -4,12 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
-
-<title>Presensi SMAKZIE QR and Geotagging</title>
-<link rel="icon" type="image/png" href="{{ asset('images/logo3.png') }}">
-
-
+    
+    <title>Presensi SMAKZIE QR and Geotagging</title>
+    <link rel="icon" type="image/png" href="{{ asset('images/logo3.png') }}">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,6 +31,10 @@
             --text-main: #142C14;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
@@ -43,6 +44,7 @@
                 #fcfdfa;
             color: var(--text-main);
             overflow-x: hidden;
+            transition: all 0.3s ease;
         }
 
         /* Mobile Menu Toggle */
@@ -70,7 +72,6 @@
         
         .mobile-menu-toggle.active {
             left: 320px;
-            transform: rotate(180deg);
         }
 
         .app-layout {
@@ -81,7 +82,7 @@
 
         /* Responsive Main Content */
         .app-main {
-            margin-left: 320px; /* Jarak untuk sidebar mengambang */
+            margin-left: 320px;
             width: calc(100% - 320px);
             padding: 2rem;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -114,6 +115,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 2rem;
+            width: 100%;
         }
 
         .user-pill {
@@ -125,6 +127,12 @@
             gap: 10px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
             border: 1px solid #f1f5f9;
+            transition: all 0.3s ease;
+        }
+
+        .user-pill:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.05);
         }
 
         .avatar-circle {
@@ -137,6 +145,29 @@
             justify-content: center;
             font-weight: 800;
             color: var(--primary-dark);
+            flex-shrink: 0;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #ef4444;
+            font-size: 1.1rem;
+            padding: 0;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .logout-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            transform: scale(1.1);
         }
 
         .app-content {
@@ -146,76 +177,47 @@
             border: 1px solid #f1f5f9;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.04);
             min-height: 60vh;
-            transition: all 0.3s ease;
         }
 
-        /* Mobile Notification Bell */
-        .mobile-notification {
-            display: none;
-            background: white;
-            border-radius: 12px;
-            padding: 0.6rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-            margin-right: 10px;
-            cursor: pointer;
-        }
-
-        /* Search Box */
-        .search-box-placeholder {
-            min-width: 200px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0.7rem 1.2rem;
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            color: #64748b;
-        }
-
-        /* Sidebar Overlay for Mobile */
+        /* Sidebar Overlay for Mobile - FIXED */
         .sidebar-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(3px);
-        z-index: 1000;
-        opacity: 0;
-        visibility: hidden; 
-        transition: all 0.3s ease;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            pointer-events: none;
         }
         
         .sidebar-overlay.active {
-        opacity: 1;
-        visibility: visible;
+            opacity: 1;
+            visibility: visible;
+            pointer-events: all;
         }
 
         /* Efek blur pada content saat sidebar terbuka */
         body.sidebar-open .app-main {
             filter: blur(2px);
             opacity: 0.7;
-            /* pointer-events: none; */
         }
 
         /* RESPONSIVE BREAKPOINTS */
         @media (max-width: 1024px) {
             .mobile-menu-toggle {
                 display: flex;
-            }
-            
-            .mobile-notification {
-                display: flex;
                 align-items: center;
                 justify-content: center;
             }
             
             .app-main { 
-                margin-left: 0; 
-                width: 100%; 
+                margin-left: 0 !important; 
+                width: 100% !important; 
                 padding: 1.5rem; 
                 padding-top: 5rem;
             }
@@ -223,28 +225,13 @@
             /* Sidebar akan diatur oleh JavaScript */
             .sidebar {
                 transform: translateX(-100%);
-                z-index: 1050 !important;
+                z-index: 1050;
             }
             
-            .sidebar-open {
+            .sidebar.sidebar-open {
                 transform: translateX(0) !important;
             }
             
-            .sidebar-overlay {
-                /* display: none; */
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.5);
-                backdrop-filter: blur(3px);
-                z-index: 999;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                pointer-events: none;
-            }
-
             .app-content {
                 padding: 1.5rem;
                 border-radius: 20px;
@@ -271,20 +258,10 @@
                 left: 15px;
                 width: 45px;
                 height: 45px;
-                /* display: none; */
-                position: fixed;
-                top: 20px;
-                left: 20px;
-                z-index: 1100;
             }
             
             .mobile-menu-toggle.active {
                 left: 295px;
-            }
-            
-            .search-box-placeholder {
-                min-width: 150px;
-                padding: 0.6rem 1rem;
             }
             
             .user-pill {
@@ -300,9 +277,11 @@
             .user-name {
                 font-size: 0.8rem !important;
             }
-
-            .sidebar.sidebar-open {
-            transform: translateX(0) !important;
+            
+            .logout-btn {
+                font-size: 1rem;
+                width: 22px;
+                height: 22px;
             }
         }
 
@@ -315,8 +294,12 @@
             .app-headbar {
                 flex-direction: row;
                 align-items: center;
-                flex-wrap: wrap;
-                gap: 0.5rem;
+                justify-content: space-between;
+            }
+            
+            .headbar-left {
+                display: flex;
+                align-items: center;
             }
             
             .headbar-right {
@@ -368,6 +351,10 @@
             .welcome-banner::after {
                 display: none;
             }
+            
+            .user-pill {
+                padding: 0.4rem;
+            }
         }
 
         @media (max-width: 360px) {
@@ -393,14 +380,9 @@
             .app-content {
                 padding: 1rem;
             }
-            
-            .app-footer {
-                font-size: 0.7rem !important;
-            }
         }
     </style>
 </head>
-<meta name="csrf-token" content="{{ csrf_token() }}">
 <body>
      
     <!-- Single Mobile Menu Toggle -->
@@ -418,14 +400,14 @@
         <!-- Main Content -->
         <div class="app-main" id="mainContent">
             <div class="app-main-inner">
-
                 <div class="app-headbar">
+                    <!-- Bagian kiri bisa dikosongkan atau isi dengan yang lain -->
                     <div class="headbar-left">
-                        <!-- Mobile Notification Bell -->
-                        <div class="mobile-notification" id="notificationBell">
-                            <i class="fa-solid fa-bell" style="color: var(--primary-fern); font-size: 1rem;"></i>
-                        </div>
-                        
+                        <!-- Kosongkan atau tambahkan elemen lain jika perlu -->
+                    </div>
+                    
+                    <!-- Bagian kanan untuk user pill dan logout -->
+                    <div class="headbar-right">
                         <div class="user-pill">
                             <div class="avatar-circle">
                                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
@@ -435,7 +417,7 @@
                             </span>
                             <form method="POST" action="{{ route('logout') }}" style="margin-left: 10px; display: flex; align-items: center;">
                                 @csrf
-                                <button type="submit" style="border:none; background:none; cursor:pointer; color:#ef4444; font-size: 1.1rem; padding: 0;">
+                                <button type="submit" class="logout-btn" title="Logout">
                                     <i class="fa-solid fa-power-off"></i>
                                 </button>
                             </form>
@@ -467,7 +449,6 @@
                      Presences Geotagging • Created by Shin's Yura <br> 
                      <span style="color: var(--primary-aspar); font-weight: 600;">&copy; {{ date('Y') }} ClockIn</span>
                 </footer>
-
             </div>
         </div>
     </div>
@@ -478,7 +459,6 @@
             const sidebarOverlay = document.getElementById('sidebarOverlay');
             const sidebar = document.querySelector('.sidebar');
             const body = document.body;
-            const mainContent = document.getElementById('mainContent');
             
             // Toggle sidebar function
             function toggleSidebar() {
@@ -504,13 +484,16 @@
             if (mobileToggle) {
                 mobileToggle.addEventListener('click', function(e) {
                     e.stopPropagation();
+                    e.preventDefault();
                     toggleSidebar();
                 });
             }
             
             // Close sidebar when clicking overlay
             if (sidebarOverlay) {
-                sidebarOverlay.addEventListener('click', function() {
+                sidebarOverlay.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    e.preventDefault();
                     if (body.classList.contains('sidebar-open')) {
                         toggleSidebar();
                     }
@@ -521,8 +504,10 @@
             document.addEventListener('click', function(e) {
                 if (window.innerWidth <= 1024 && 
                     body.classList.contains('sidebar-open') && 
+                    sidebar && 
                     !sidebar.contains(e.target) && 
-                    e.target !== mobileToggle) {
+                    e.target !== mobileToggle &&
+                    !sidebarOverlay.contains(e.target)) {
                     toggleSidebar();
                 }
             });
@@ -573,19 +558,15 @@
             updateGreeting();
             setInterval(updateGreeting, 3600000);
             
-            // Notification bell click
-            const notificationBell = document.getElementById('notificationBell');
-            if (notificationBell) {
-                notificationBell.addEventListener('click', function() {
-                    alert('Notifikasi: Fitur akan segera hadir!');
-                });
-            }
-            
             // Handle window resize
+            let resizeTimer;
             window.addEventListener('resize', function() {
-                if (window.innerWidth > 1024 && body.classList.contains('sidebar-open')) {
-                    toggleSidebar();
-                }
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(function() {
+                    if (window.innerWidth > 1024 && body.classList.contains('sidebar-open')) {
+                        toggleSidebar();
+                    }
+                }, 250);
             });
         });
     </script>

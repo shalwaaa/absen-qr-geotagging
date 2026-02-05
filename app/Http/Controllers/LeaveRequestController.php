@@ -12,7 +12,7 @@ class LeaveRequestController extends Controller
     public function index()
     {
         // List izin saya
-        $requests = LeaveRequest::where('student_id', Auth::id())->latest()->get();
+        $requests = LeaveRequest::where('student_id', Auth::id())->latest()->paginate(10);
         return view('student.leaves.index', compact('requests'));
     }
 

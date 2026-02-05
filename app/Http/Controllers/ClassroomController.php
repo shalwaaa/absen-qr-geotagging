@@ -10,7 +10,8 @@ class ClassroomController extends Controller
 {
     public function index()
     {
-        $classrooms = Classroom::all();
+        $classrooms = Classroom::latest()
+                            ->paginate(10);
         return view('admin.classrooms.index', compact('classrooms'));
     }
 

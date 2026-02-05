@@ -8,11 +8,32 @@ use Illuminate\Http\Request;
 
 class ClassroomController extends Controller
 {
-    public function index()
+public function index(Request $request)
     {
-        $classrooms = Classroom::latest()
-                            ->paginate(10);
-        return view('admin.classrooms.index', compact('classrooms'));
+        // 1. Ambil kata kunci pencarian
+        $search = $request->input('search');
+
+        // 2. Mulai Query dengan Eager Loading Wali Kelas
+        $query = Classroom::with('homeroomTeacher');
+
+        // 3. Logika Pencarian
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%') // Cari Nama Kelas
+                  ->orWhereHas('homeroomTeacher', function($teacherQuery) use ($search) {
+                      $teacherQuery->where('name', 'like', '%' . $search . '%'); // Cari Nama Wali Kelas
+                  });
+            });
+        }
+
+        // 4. Logika Pengurutan (Sorting) & Pagination
+        $classrooms = $query->orderBy('grade_level', 'asc')
+                            ->orderBy('name', 'asc')
+                            ->paginate(10)
+                            ->withQueryString(); // Agar search tidak hilang saat ganti halaman
+
+        // 5. Kembalikan ke View
+        return view('admin.classrooms.index', compact('classrooms', 'search'));
     }
 
     public function create()
@@ -25,7 +46,7 @@ class ClassroomController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'latitude' => 'required', // Wajib diisi (dari peta)
+            'latitude' => 'required', 
             'longitude' => 'required',
             'radius_meters' => 'required|integer|min:10',
             'grade_level' => 'required|integer|min:1|max:12',

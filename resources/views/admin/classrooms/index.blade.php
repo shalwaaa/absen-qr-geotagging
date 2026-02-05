@@ -35,7 +35,63 @@
         .btn-detail { color: #2563eb; } .btn-detail:hover { background: #dbeafe; border-color: #60a5fa; }
         .btn-delete { color: #dc2626; } .btn-delete:hover { background: #fee2e2; border-color: #fca5a5; }
 
-        /* 6. PAGINATION CUSTOM STYLES - SAMA DENGAN USERS */
+        /* 6. SEARCH BAR STYLING */
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .search-wrapper {
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            height: 48px;
+            width: 100%;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: #4a6741;
+            box-shadow: 0 0 0 4px rgba(74, 103, 65, 0.1);
+        }
+
+        .search-icon {
+            color: #94a3b8;
+            margin-right: 12px;
+            font-size: 14px;
+        }
+
+        .search-input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 14px;
+            color: #334155;
+            outline: none;
+        }
+
+        .search-input::placeholder {
+            color: #94a3b8;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: none;
+        }
+
+        .search-stats {
+            color: #64748b;
+            font-size: 13px;
+            margin-top: 4px;
+            padding-left: 8px;
+        }
+
+        /* 7. PAGINATION CUSTOM STYLES - SAMA DENGAN USERS */
         .custom-pagination {
             display: flex;
             justify-content: center;
@@ -156,6 +212,15 @@
             .pagination-info {
                 font-size: 12px;
             }
+            
+            .search-container {
+                gap: 12px;
+            }
+            
+            .search-wrapper {
+                height: 44px;
+                padding: 0 12px;
+            }
         }
     </style>
 
@@ -168,9 +233,9 @@
                 <p class="text-sm text-slate-500 mt-1">Kelola area absensi dan koordinat ruang kelas</p>
             </div>
             <div class="hidden sm:block">
-                <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">
+                {{-- <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">
                     GEO-FENCING ACTIVE
-                </span>
+                </span> --}}
             </div>
         </div>
     </x-slot>
@@ -178,13 +243,39 @@
     <div class="py-8 px-4 sm:px-6 lg:px-8 animate-standard">
         <div class="max-w-7xl mx-auto">
             
-            <div class="flex justify-end mb-6">
+            <!-- SEARCH SECTION -->
+            <div class="search-container">
+                <form method="GET" action="{{ route('classrooms.index') }}" class="w-full">
+                    <div class="search-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input 
+                            type="text" 
+                            name="search" 
+                            value="{{ request('search') }}" 
+                            placeholder="Cari nama kelas atau wali kelas..." 
+                            class="search-input"
+                        >
+                    </div>
+                    @if(request('search'))
+                        <div class="search-stats">
+                            Hasil pencarian untuk "<span class="font-medium text-[#4a6741]">{{ request('search') }}</span>"
+                        </div>
+                    @endif
+                </form>
+            </div>
+
+            <!-- ACTION BUTTONS -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="text-sm text-slate-500">
+                    Total: <span class="font-semibold">{{ $classrooms->total() }}</span> kelas
+                </div>
                 <a href="{{ route('classrooms.create') }}" class="btn-primary">
                     <i class="fa-solid fa-plus"></i>
                     <span>Tambah Kelas Baru</span>
                 </a>
             </div>
 
+            <!-- TABLE SECTION -->
             <div class="custom-card bg-white">
                 <div class="overflow-x-auto">
                     <table class="modern-table">
@@ -258,7 +349,11 @@
                             <tr>
                                 <td colspan="6" class="py-12 text-center text-slate-400">
                                     <i class="fa-solid fa-folder-open text-4xl mb-3 block opacity-20"></i>
-                                    Belum ada data kelas.
+                                    @if(request('search'))
+                                        Tidak ditemukan kelas dengan kata kunci "<span class="font-medium">{{ request('search') }}</span>"
+                                    @else
+                                        Belum ada data kelas.
+                                    @endif
                                 </td>
                             </tr>
                             @endforelse
@@ -266,7 +361,7 @@
                     </table>
                 </div>
 
-                <!-- PAGINATION SECTION - SAMA DENGAN USERS -->
+                <!-- PAGINATION SECTION -->
                 @if($classrooms->hasPages())
                 <div class="custom-pagination">
                     <div class="pagination-info">
@@ -280,7 +375,7 @@
                                 <i class="fa-solid fa-chevron-left"></i>
                             </span>
                         @else
-                            <a href="{{ $classrooms->previousPageUrl() }}" class="page-link arrow">
+                            <a href="{{ $classrooms->appends(['search' => request('search')])->previousPageUrl() }}" class="page-link arrow">
                                 <i class="fa-solid fa-chevron-left"></i>
                             </a>
                         @endif
@@ -297,7 +392,7 @@
                                 @if ($i == $current)
                                     <span class="page-link active">{{ $i }}</span>
                                 @else
-                                    <a href="{{ $classrooms->url($i) }}" 
+                                    <a href="{{ $classrooms->appends(['search' => request('search')])->url($i) }}" 
                                        class="page-link {{ ($i > 2 && $i < $last - 1) ? 'hide-on-mobile' : '' }}">
                                         {{ $i }}
                                     </a>
@@ -311,7 +406,7 @@
 
                         {{-- Next Page Link --}}
                         @if ($classrooms->hasMorePages())
-                            <a href="{{ $classrooms->nextPageUrl() }}" class="page-link arrow">
+                            <a href="{{ $classrooms->appends(['search' => request('search')])->nextPageUrl() }}" class="page-link arrow">
                                 <i class="fa-solid fa-chevron-right"></i>
                             </a>
                         @else
@@ -325,4 +420,31 @@
             </div>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Debounce untuk search input
+            let searchTimeout;
+            const searchInput = document.querySelector('input[name="search"]');
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    clearTimeout(searchTimeout);
+                    
+                    // Submit form setelah 500ms tanpa ketikan
+                    searchTimeout = setTimeout(function() {
+                        e.target.closest('form').submit();
+                    }, 500);
+                });
+                
+                // Submit form saat enter ditekan
+                searchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        e.target.closest('form').submit();
+                    }
+                });
+            }
+        });
+    </script>
 </x-app-layout>

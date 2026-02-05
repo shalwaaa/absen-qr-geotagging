@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -21,8 +21,8 @@ class User extends Authenticatable
         'role',
         'nip_nis',
         'classroom_id',
+        'is_piket', // TAMBAHKAN INI!
         // 'status',
-        // 'is_piket',
     ];
 
     /**
@@ -41,11 +41,11 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_piket' => 'boolean',
+            'is_piket' => 'boolean', // TAMBAHKAN CASTING UNTUK BOOLEAN
         ];
     }
 
-    // --- RELASI (JANGAN DIHAPUS) ---
+    // --- RELASI ---
 
     // 1. Relasi ke Kelas Saat Ini (Master Data)
     public function classroom()
@@ -54,7 +54,6 @@ class User extends Authenticatable
     }
 
     // 2. Relasi ke History Kelas (Folder Tahun Ajar)
-    // INI YANG MENYEBABKAN ERROR "BadMethodCallException" JIKA TIDAK ADA
     public function classMembers()
     {
         return $this->hasMany(ClassMember::class, 'student_id');

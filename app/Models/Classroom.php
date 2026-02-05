@@ -7,7 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 class Classroom extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'latitude', 'longitude', 'radius_meters'];
+    protected $fillable = [
+    'name', 
+    'latitude', 
+    'longitude', 
+    'radius_meters',
+    'grade_level',         
+    'homeroom_teacher_id' 
+    ];
     
     // Relasi: 1 Kelas punya banyak Siswa
     public function students()

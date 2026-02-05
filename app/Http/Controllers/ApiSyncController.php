@@ -572,11 +572,55 @@ class ApiSyncController extends Controller
     /**
      * Helper: Detect grade level dari nama kelas
      */
+/**
+ * Helper: Detect grade level dari nama kelas dengan lebih akurat
+ */
     private function detectGradeLevel(string $className): int
     {
-        if (str_starts_with($className, 'XII') || preg_match('/\b12\b/', $className)) return 12;
-        if (str_starts_with($className, 'XI') || preg_match('/\b11\b/', $className)) return 11;
-        if (str_starts_with($className, 'X') || preg_match('/\b10\b/', $className)) return 10;
+        // Normalisasi nama kelas: hapus spasi, ubah ke uppercase
+        $className = strtoupper(trim($className));
+        
+        // Deteksi berdasarkan awalan kelas
+        if (str_starts_with($className, 'XII')) {
+            return 12;
+        }
+        
+        if (str_starts_with($className, 'XI')) {
+            return 11;
+        }
+        
+        if (str_starts_with($className, 'X')) {
+            return 10;
+        }
+        
+        // Deteksi berdasarkan pola angka (10, 11, 12)
+        if (preg_match('/(^|\D)(12)(\D|$)/', $className)) {
+            return 12;
+        }
+        
+        if (preg_match('/(^|\D)(11)(\D|$)/', $className)) {
+            return 11;
+        }
+        
+        if (preg_match('/(^|\D)(10)(\D|$)/', $className)) {
+            return 10;
+        }
+        
+        // Deteksi berdasarkan kata kunci
+        $lowerClassName = strtolower($className);
+        if (str_contains($lowerClassName, 'dua belas') || str_contains($lowerClassName, '12')) {
+            return 12;
+        }
+        
+        if (str_contains($lowerClassName, 'sebelas') || str_contains($lowerClassName, '11')) {
+            return 11;
+        }
+        
+        if (str_contains($lowerClassName, 'sepuluh') || str_contains($lowerClassName, '10')) {
+            return 10;
+        }
+        
+        // Default: kembalikan 10 (seperti sebelumnya)
         return 10;
     }
     

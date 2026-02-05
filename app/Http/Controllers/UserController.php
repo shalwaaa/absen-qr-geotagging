@@ -106,7 +106,7 @@ class UserController extends Controller
             'email' => $request->email,
             'nip_nis' => $request->nip_nis,
             'classroom_id' => $user->role == 'student' ? $request->classroom_id : null,
-            'is_piket' => $request->has('is_piket'),    
+            'is_piket' => $request->has('is_piket'), // PASTIKAN INI ADA
         ]);
 
         if ($request->filled('password')) {
@@ -114,7 +114,7 @@ class UserController extends Controller
         }
 
         return redirect()->route('users.index', ['type' => $user->role])
-                         ->with('success', 'Data berhasil diperbarui!');
+                        ->with('success', 'Data berhasil diperbarui!');
     }
 
     public function destroy(User $user)

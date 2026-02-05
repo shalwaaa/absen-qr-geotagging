@@ -158,7 +158,39 @@
             border-radius: 6px;
         }
 
-        /* 8. Action Buttons */
+        /* 8. BADGE GURU PIKET BARU */
+        .badge-piket {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            color: #92400e;
+            font-size: 10px;
+            font-weight: 800;
+            border-radius: 20px;
+            border: 1px solid #fbbf24;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-left: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+
+        /* 9. Nama Guru dengan Badge */
+        .teacher-name-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* 10. Action Buttons */
         .btn-action {
             width: 32px;
             height: 32px;
@@ -176,7 +208,7 @@
         .btn-delete { color: #dc2626; }
         .btn-delete:hover { background: #fee2e2; }
 
-        /* 9. PAGINATION CUSTOM STYLES */
+        /* 11. PAGINATION CUSTOM STYLES */
         .custom-pagination {
             display: flex;
             justify-content: center;
@@ -287,6 +319,16 @@
             .page-link.hide-on-mobile {
                 display: none;
             }
+            
+            .badge-piket {
+                font-size: 9px;
+                padding: 3px 8px;
+                margin-left: 6px;
+            }
+            
+            .teacher-name-container {
+                gap: 6px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -299,6 +341,11 @@
             .pagination-info {
                 font-size: 12px;
             }
+            
+            .badge-piket {
+                margin-top: 4px;
+                margin-left: 0;
+            }
         }
     </style>
 
@@ -310,9 +357,12 @@
                         {{ $type == 'teacher' ? 'Manajemen Guru' : 'Manajemen Siswa' }}
                     </span>
                 </h2>
-                <p class="text-sm text-slate-500 mt-1">
+                {{-- <p class="text-sm text-slate-500 mt-1">
                     {{ $users->total() }} {{ $type == 'teacher' ? 'guru' : 'siswa' }} terdaftar
-                </p>
+                    @if($type == 'teacher')
+                        • <span class="text-amber-600 font-semibold">{{ $users->where('is_piket', true)->count() }} Guru Piket</span>
+                    @endif
+                </p> --}}
             </div>
         </div>
     </x-slot>
@@ -365,7 +415,18 @@
                                 <td class="text-center text-slate-400">
                                     {{ $index + 1 + ($users->currentPage() - 1) * $users->perPage() }}
                                 </td>
-                                <td class="font-medium text-slate-800">{{ $u->name }}</td>
+                                <td>
+                                    <div class="teacher-name-container">
+                                        <span class="font-medium text-slate-800">{{ $u->name }}</span>
+                                        <!-- TAMPILKAN BADGE JIKA GURU PIKET -->
+                                        @if($type == 'teacher' && $u->is_piket)
+                                            <span class="badge-piket" title="Guru Piket">
+                                                <i class="fa-solid fa-shield-halved"></i>
+                                                PIKET
+                                            </span>
+                                        @endif
+                                    </div>
+                                </td>
                                 <td class="text-center"><span class="badge-id">{{ $u->nip_nis ?? '-' }}</span></td>
                                 @if($type == 'student')
                                     <td class="text-center">
@@ -400,6 +461,9 @@
                 <div class="custom-pagination">
                     <div class="pagination-info">
                         Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }}
+                        @if($type == 'teacher')
+                            • <span class="text-amber-600 font-semibold">{{ $users->where('is_piket', true)->count() }} Guru Piket</span>
+                        @endif
                     </div>
                     
                     <div class="pagination-links">

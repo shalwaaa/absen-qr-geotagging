@@ -1,296 +1,693 @@
 <x-app-layout>
-    <x-slot name="header"></x-slot>
+    <x-slot name="header">
+        <div style="margin-bottom: 2rem;">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span style="color: #E4EB9C; font-weight: 800;">Sinkronisasi Data Pusat</span>
+            </h2>
+            <p class="text-sm text-slate-500 mt-1">Integrasi data dengan sistem pusat sekolah</p>
+        </div>
+    </x-slot>
     
     <style>
-        .card-sync { background: white; border-radius: 16px; padding: 30px; border: 1px solid #f0fdf4; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 600px; margin: 0 auto; }
-        .btn-sync { background: #2D5128; color: white; width: 100%; padding: 12px; border-radius: 10px; font-weight: bold; transition: 0.2s; }
-        .btn-sync:hover { background: #537B2F; transform: translateY(-2px); }
-        .btn-sync:disabled { background: #9ca3af; cursor: not-allowed; transform: none; }
-        /* Animasi spin */
-        .spinner { display: none; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top: 3px solid #fff; width: 18px; height: 18px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        /* Main Card */
+        .sync-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .sync-card {
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem;
+            border: 1px solid #f1f5f9;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Header */
+        .sync-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .sync-title {
+            color: #142C14;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #2D5128 0%, #537B2F 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .sync-subtitle {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.75rem;
+        }
+        
+        .form-label {
+            display: block;
+            color: #4a6741;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: 0.02em;
+        }
+        
+        .select-wrapper {
+            position: relative;
+        }
+        
+        .form-select {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: #334155;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            appearance: none;
+            outline: none;
+        }
+        
+        .form-select:focus {
+            border-color: #4a6741;
+            box-shadow: 0 0 0 4px rgba(74, 103, 65, 0.1);
+        }
+        
+        .select-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 1rem;
+        }
+        
+        .form-note {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+            padding-left: 0.25rem;
+        }
+        
+        /* Alert Boxes */
+        .alert {
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+        
+        .alert-success {
+            background: #f0fdf4;
+            color: #166534;
+            border-color: #dcfce7;
+        }
+        
+        .alert-error {
+            background: #fef2f2;
+            color: #991b1b;
+            border-color: #fee2e2;
+        }
+        
+        .alert-warning {
+            background: #fffbeb;
+            color: #92400e;
+            border-color: #fef3c7;
+        }
+        
+        .alert-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+            margin-top: 0.1rem;
+        }
+        
+        /* Action Buttons */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.75rem;
+        }
+        
+        .btn-cleanup {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+            padding: 0.6rem 1.25rem;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-cleanup:hover {
+            background: #fecaca;
+            transform: translateY(-2px);
+        }
+        
+        .btn-cleanup:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        /* Sync Button */
+        .btn-sync {
+            width: 100%;
+            background: linear-gradient(135deg, #2D5128 0%, #537B2F 100%);
+            color: white;
+            border: none;
+            padding: 1.25rem;
+            border-radius: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            box-shadow: 0 4px 15px rgba(45, 81, 40, 0.2);
+        }
+        
+        .btn-sync:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(45, 81, 40, 0.3);
+        }
+        
+        .btn-sync:active:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        
+        .btn-sync:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #94a3b8 100%);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-icon {
+            font-size: 1.1rem;
+        }
+        
+        .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 1.5rem;
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #e2e8f0;
+            display: none;
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .progress-label {
+            color: #475569;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .progress-text {
+            color: #4a6741;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4a6741 0%, #8DA750 100%);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+        
+        .progress-fill.complete {
+            background: #059669;
+        }
+        
+        .progress-fill.error {
+            background: #dc2626;
+        }
+        
+        /* Steps List */
+        .sync-steps {
+            margin-top: 1.25rem;
+            padding: 0;
+        }
+        
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+        
+        .step-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        
+        .step-icon.pending {
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+        
+        .step-icon.active {
+            background: #4a6741;
+            color: white;
+        }
+        
+        .step-icon.complete {
+            background: #059669;
+            color: white;
+        }
+        
+        .step-icon.error {
+            background: #dc2626;
+            color: white;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sync-container {
+                padding: 0 1rem;
+            }
+            
+            .sync-card {
+                padding: 1.75rem;
+            }
+            
+            .sync-title {
+                font-size: 1.5rem;
+            }
+            
+            .action-bar {
+                flex-direction: column;
+                gap: 1rem;
+                align-items: stretch;
+            }
+            
+            .btn-cleanup {
+                align-self: flex-start;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .sync-card {
+                padding: 1.5rem;
+            }
+            
+            .alert {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+        }
     </style>
 
-    <div class="py-12 px-4 bg-[#FDFDF9] min-h-screen">
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-black text-[#142C14]">Sinkronisasi Data Pusat</h1>
-            <p class="text-gray-500 mt-2">Tarik data API (Guru, Kelas, Siswa) dan masukkan ke Folder Tahun Ajar.</p>
-        </div>
-
-        <div class="card-sync">
-            @if(session('success'))
-                <div class="bg-green-100 text-green-800 p-4 rounded-xl mb-6 text-sm font-bold border border-green-200 flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                    </svg>
-                    {{ session('success') }}
-                </div>
-            @endif
-
-            @if(session('error'))
-                <div class="bg-red-100 text-red-800 p-4 rounded-xl mb-6 text-sm font-bold border border-red-200 flex items-center gap-3">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    {{ session('error') }}
-                </div>
-            @endif
-
-            @if($errors->any())
-                <div class="bg-red-100 text-red-800 p-4 rounded-xl mb-6 text-sm font-bold border border-red-200">
-                    <ul class="list-disc ml-4">
-                        @foreach($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <div class="flex justify-end mb-4">
-                <button
-                    onclick="hapusTahunKosong()"
-                    class="text-xs font-bold text-red-700 bg-red-50 px-3 py-2 rounded-lg hover:bg-red-100 transition flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                    </svg>
-                    Hapus Tahun Kosong
-                </button>
-            </div>
-
-            {{-- HAPUS FORM cleanup yang lama karena route academic-years.cleanup tidak ada --}}
-            {{-- <form id="cleanup-form" action="{{ route('academic-years.cleanup') }}" method="POST" style="display:none;">
-                @csrf
-                @method('DELETE')
-            </form> --}}
-
-            <form action="{{ route('sync.data') }}" method="POST" id="syncForm">
-                @csrf
-                
-                <div class="mb-6">
-                    <label class="block font-bold text-[#142C14] mb-2">Pilih Folder Tahun Ajaran (Target)</label>
-                    <div class="relative">
-                        <select name="academic_year_id" required class="w-full border-2 border-gray-200 rounded-xl p-3 pl-10 focus:border-[#537B2F] outline-none appearance-none bg-white">
-                            @foreach($years as $y)
-                                <option value="{{ $y->id }}" {{ old('academic_year_id') == $y->id ? 'selected' : '' }}>
-                                    {{ $y->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <svg class="w-5 h-5 absolute left-4 top-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h5l2 2h5a2 2 0 012 2v6a2 2 0 01-2 2H4a2 2 0 01-2-2V6z"/>
-                        </svg>
+    <div class="py-8 px-4 sm:px-6 lg:px-8">
+        <div class="sync-container">
+            <div class="sync-card">
+                <!-- Alert Messages -->
+                @if(session('success'))
+                    <div class="alert alert-success">
+                        <div class="alert-icon">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>{{ session('success') }}</div>
                     </div>
-                    <p class="text-xs text-gray-400 mt-2 ml-1">
-                        *Tahun ajar otomatis digenerate dari 2020 s.d {{ date('Y') + 1 }}.
-                    </p>
+                @endif
+
+                @if(session('error'))
+                    <div class="alert alert-error">
+                        <div class="alert-icon">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <div>{{ session('error') }}</div>
+                    </div>
+                @endif
+
+                @if($errors->any())
+                    <div class="alert alert-error">
+                        <div class="alert-icon">
+                            <i class="fa-solid fa-exclamation-circle"></i>
+                        </div>
+                        <div>
+                            <strong>Terdapat kesalahan:</strong>
+                            <ul class="mt-1 ml-4 list-disc">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    </div>
+                @endif
+
+                <!-- Action Bar -->
+                <div class="action-bar">
+                    <button onclick="hapusTahunKosong()" id="cleanupBtn" class="btn-cleanup">
+                        <i class="fa-solid fa-trash-can"></i>
+                        Hapus Tahun Kosong
+                    </button>
+                    
+                    <div class="text-sm text-slate-500">
+                        <i class="fa-solid fa-database mr-1"></i>
+                        {{ $years->count() }} Tahun Ajaran Tersedia
+                    </div>
                 </div>
 
-                <div class="bg-yellow-50 p-4 rounded-xl mb-8 border border-yellow-100">
-                    <h4 class="font-bold text-yellow-800 text-sm mb-2 flex items-center gap-2">
-                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
-                        </svg>
-                        Info Sinkronisasi:
-                    </h4>
-                    <ul class="text-xs text-yellow-700 list-disc ml-5 space-y-1">
-                        <li>Pastikan koneksi internet stabil (Proses bisa memakan waktu 1-3 menit).</li>
-                        <li>Data guru akan diperbarui/ditambah tanpa menghapus data lama.</li>
-                        <li>Data Siswa akan dipetakan ke tahun ajaran yang dipilih.</li>
-                    </ul>
+                <!-- Warning Info -->
+                <div class="alert alert-warning">
+                    <div class="alert-icon">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <div>
+                        <strong>Informasi Penting:</strong>
+                        <ul class="mt-1 ml-4 list-disc">
+                            <li>Pastikan koneksi internet stabil (Proses memakan waktu 30-60 menit lebih)</li>
+                            <li>Data guru akan diperbarui/ditambah tanpa menghapus data lama</li>
+                            <li>Data siswa akan dipetakan ke tahun ajaran yang dipilih</li>
+                        </ul>
+                    </div>
                 </div>
 
-                <button type="submit" id="btnSubmit" class="btn-sync flex justify-center items-center gap-2">
-                    <span id="btnText" class="flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                        </svg>
-                        TARIK DATA SEKARANG
-                    </span>
-                    <div id="btnLoader" class="spinner"></div>
-                </button>
-            </form>
+                <!-- Sync Form -->
+                <form action="{{ route('sync.data') }}" method="POST" id="syncForm">
+                    @csrf
+                    
+                    <!-- Year Selection -->
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fa-solid fa-folder mr-2"></i>
+                            Tahun Ajaran Target
+                        </label>
+                        <div class="select-wrapper">
+                            <select name="academic_year_id" required class="form-select">
+                                @foreach($years as $y)
+                                    <option value="{{ $y->id }}" {{ old('academic_year_id') == $y->id ? 'selected' : '' }}>
+                                        {{ $y->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <div class="select-icon">
+                                <i class="fa-solid fa-calendar"></i>
+                            </div>
+                        </div>
+                        <p class="form-note">
+                            *Tahun ajar otomatis digenerate dari 2020 s.d {{ date('Y') + 1 }}
+                        </p>
+                    </div>
 
-            <!-- Progress Bar -->
-            <div id="progressContainer" class="mt-6 hidden">
-                <div class="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Status:</span>
-                    <span id="progressText">Menyiapkan...</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div id="progressBar" class="bg-[#537B2F] h-2 rounded-full" style="width: 0%"></div>
+                    <!-- Sync Button -->
+                    <button type="submit" id="syncBtn" class="btn-sync">
+                        <span id="btnText">
+                            <i class="fa-solid fa-cloud-arrow-down btn-icon"></i>
+                            TARIK DATA SEKARANG
+                        </span>
+                        <div id="btnSpinner" class="spinner"></div>
+                    </button>
+                </form>
+
+                <!-- Progress Section -->
+                <div id="progressContainer" class="progress-container">
+                    <div class="progress-header">
+                        <span class="progress-label">Proses Sinkronisasi</span>
+                        <span id="progressText" class="progress-text">Menyiapkan...</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div id="progressFill" class="progress-fill"></div>
+                    </div>
+                    
+                    <!-- Steps Indicator -->
+                    <div class="sync-steps">
+                        <div class="step-item">
+                            <div id="step1Icon" class="step-icon pending">
+                                <i class="fa-solid fa-1"></i>
+                            </div>
+                            <span id="step1Text">Mengambil data guru</span>
+                        </div>
+                        <div class="step-item">
+                            <div id="step2Icon" class="step-icon pending">
+                                <i class="fa-solid fa-2"></i>
+                            </div>
+                            <span id="step2Text">Mengambil data siswa</span>
+                        </div>
+                        <div class="step-item">
+                            <div id="step3Icon" class="step-icon pending">
+                                <i class="fa-solid fa-3"></i>
+                            </div>
+                            <span id="step3Text">Memetakan ke tahun ajaran</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-<script>
-let syncInProgress = false;
-let currentStep = 'start';
+    <script>
+        let syncInProgress = false;
+        const steps = ['guru', 'siswa', 'pemetaan'];
+        const stepNames = {
+            'guru': 'Mengambil data guru',
+            'siswa': 'Mengambil data siswa',
+            'pemetaan': 'Memetakan ke tahun ajaran'
+        };
 
-document.getElementById('syncForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    if (syncInProgress) {
-        alert('Sync sedang berjalan, tunggu sebentar...');
-        return;
-    }
-    
-    const form = this;
-    const btn = document.getElementById('btnSubmit');
-    const btnText = document.getElementById('btnText');
-    const progressContainer = document.getElementById('progressContainer');
-    const progressBar = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    
-    // Validasi
-    const yearSelect = form.querySelector('select[name="academic_year_id"]');
-    if (!yearSelect.value) {
-        alert('Pilih tahun ajaran terlebih dahulu!');
-        yearSelect.focus();
-        return;
-    }
-    
-    // Setup UI
-    syncInProgress = true;
-    btn.disabled = true;
-    btnText.innerHTML = `
-        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        MEMPROSES...
-    `;
-    
-    progressContainer.classList.remove('hidden');
-    progressBar.style.width = '5%';
-    progressText.textContent = 'Memulai sinkronisasi...';
-    
-    // Mulai proses sync dengan step-by-step
-    await executeSyncStep(form, 'guru', progressBar, progressText);
-});
-
-async function executeSyncStep(form, step, progressBar, progressText) {
-    const formData = new FormData(form);
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // Tambahkan step parameter ke formData
-    formData.append('step', step);
-    
-    try {
-        const response = await fetch('{{ route("sync.data") }}', {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            }
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
-        }
-        
-        const data = await response.json();
-        
-        if (!data.success) {
-            throw new Error(data.message || 'Step gagal');
-        }
-        
-        // Update progress berdasarkan response dari server
-        progressBar.style.width = data.progress + '%';
-        progressText.textContent = data.message;
-        
-        // Jika ada next step, lanjutkan
-        if (data.step && data.step !== 'complete') {
-            // Delay kecil sebelum step berikutnya
-            await new Promise(resolve => setTimeout(resolve, 500));
-            await executeSyncStep(form, data.step, progressBar, progressText);
-        } else {
-            // Selesai
-            progressBar.style.width = '100%';
-            progressBar.style.backgroundColor = '#10b981';
-            progressText.textContent = '✅ Sync berhasil! Mengalihkan...';
+        document.getElementById('syncForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
             
+            if (syncInProgress) {
+                alert('Sinkronisasi sedang berjalan, harap tunggu...');
+                return;
+            }
+            
+            const form = this;
+            const syncBtn = document.getElementById('syncBtn');
+            const btnText = document.getElementById('btnText');
+            const btnSpinner = document.getElementById('btnSpinner');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            // Validasi
+            const yearSelect = form.querySelector('select[name="academic_year_id"]');
+            if (!yearSelect.value) {
+                alert('Pilih tahun ajaran terlebih dahulu!');
+                yearSelect.focus();
+                return;
+            }
+            
+            // Setup UI
+            syncInProgress = true;
+            syncBtn.disabled = true;
+            btnText.innerHTML = '<i class="fa-solid fa-spinner fa-spin btn-icon"></i> MEMPROSES...';
+            progressContainer.style.display = 'block';
+            progressFill.style.width = '5%';
+            progressText.textContent = 'Memulai sinkronisasi...';
+            
+            // Reset step indicators
+            steps.forEach((_, index) => {
+                const stepIcon = document.getElementById(`step${index + 1}Icon`);
+                const stepText = document.getElementById(`step${index + 1}Text`);
+                stepIcon.className = 'step-icon pending';
+                stepIcon.innerHTML = `<i class="fa-solid fa-${index + 1}"></i>`;
+                stepText.textContent = stepNames[steps[index]] || `Langkah ${index + 1}`;
+            });
+            
+            // Start sync process
+            await executeSyncStep(form, steps[0], progressFill, progressText);
+        });
+
+        async function executeSyncStep(form, step, progressFill, progressText) {
+            const formData = new FormData(form);
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            
+            // Add step parameter
+            formData.append('step', step);
+            
+            try {
+                // Update step UI
+                const stepIndex = steps.indexOf(step);
+                if (stepIndex >= 0) {
+                    const stepIcon = document.getElementById(`step${stepIndex + 1}Icon`);
+                    stepIcon.className = 'step-icon active';
+                    stepIcon.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+                }
+                
+                const response = await fetch('{{ route("sync.data") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.message || 'Langkah gagal');
+                }
+                
+                // Update progress
+                progressFill.style.width = data.progress + '%';
+                progressText.textContent = data.message;
+                
+                // Mark step as complete
+                if (stepIndex >= 0) {
+                    const stepIcon = document.getElementById(`step${stepIndex + 1}Icon`);
+                    stepIcon.className = 'step-icon complete';
+                    stepIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+                }
+                
+                // Continue to next step
+                if (data.step && data.step !== 'complete') {
+                    await new Promise(resolve => setTimeout(resolve, 800));
+                    await executeSyncStep(form, data.step, progressFill, progressText);
+                } else {
+                    // Complete
+                    progressFill.style.width = '100%';
+                    progressFill.classList.add('complete');
+                    progressText.textContent = '✅ Sinkronisasi berhasil!';
+                    
+                    // Update button
+                    setTimeout(() => {
+                        syncInProgress = false;
+                        document.getElementById('syncBtn').disabled = false;
+                        document.getElementById('btnText').innerHTML = '<i class="fa-solid fa-check btn-icon"></i> SELESAI';
+                        
+                        // Reload page after 2 seconds
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }, 1500);
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                progressFill.style.width = '0%';
+                progressFill.classList.add('error');
+                progressText.textContent = '❌ Error: ' + error.message;
+                
+                // Mark failed step
+                const stepIndex = steps.indexOf(step);
+                if (stepIndex >= 0) {
+                    const stepIcon = document.getElementById(`step${stepIndex + 1}Icon`);
+                    stepIcon.className = 'step-icon error';
+                    stepIcon.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                }
+                
+                resetSyncButton();
+            }
+        }
+
+        function resetSyncButton() {
             setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+                syncInProgress = false;
+                const syncBtn = document.getElementById('syncBtn');
+                syncBtn.disabled = false;
+                document.getElementById('btnText').innerHTML = '<i class="fa-solid fa-cloud-arrow-down btn-icon"></i> COBA LAGI';
+            }, 3000);
         }
-        
-    } catch (error) {
-        console.error('Sync step failed:', error);
-        progressBar.style.width = '0%';
-        progressText.textContent = '❌ Error: ' + error.message;
-        progressBar.style.backgroundColor = '#ef4444';
-        resetSyncButton();
-    }
-}
 
-function resetSyncButton() {
-    const btn = document.getElementById('btnSubmit');
-    const btnText = document.getElementById('btnText');
-    
-    setTimeout(() => {
-        syncInProgress = false;
-        btn.disabled = false;
-        btnText.innerHTML = `
-            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/>
-            </svg>
-            COBA LAGI
-        `;
-    }, 3000);
-}
-
-// Fungsi untuk hapus tahun kosong
-function hapusTahunKosong() {
-    if (!confirm('Apakah Anda yakin ingin menghapus tahun ajaran yang kosong?\n\nTahun ajaran yang tidak memiliki siswa aktif akan dihapus.')) {
-        return;
-    }
-    
-    const btn = event.target;
-    const originalText = btn.innerHTML;
-    
-    // Tampilkan loading
-    btn.innerHTML = `
-        <svg class="w-4 h-4 animate-spin" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-        </svg>
-        Memproses...
-    `;
-    btn.disabled = true;
-    
-    // Kirim request AJAX ke route sync.cleanup
-    fetch('{{ route("sync.cleanup") }}', {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+        // Cleanup function
+        function hapusTahunKosong() {
+            if (!confirm('Yakin ingin menghapus tahun ajaran yang kosong?\n\nTahun ajaran tanpa data siswa akan dihapus permanen.')) {
+                return;
+            }
+            
+            const btn = document.getElementById('cleanupBtn');
+            const originalHtml = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses...';
+            btn.disabled = true;
+            
+            fetch('{{ route("sync.cleanup") }}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Network error');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Terjadi kesalahan'));
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Terjadi kesalahan jaringan');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            });
         }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert(data.message);
-            window.location.reload(); // Refresh halaman
-        } else {
-            alert('Error: ' + (data.message || 'Terjadi kesalahan'));
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Terjadi kesalahan jaringan');
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
-}
-</script>
+    </script>
 </x-app-layout>

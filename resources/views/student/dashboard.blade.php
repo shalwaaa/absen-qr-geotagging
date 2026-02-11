@@ -266,9 +266,11 @@
     </style>
 
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            <span style="color: var(--p-light); font-weight: 800;"></span>
-        </h2>
+        <div class="flex items-center justify-between header-section">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span style="color: #E4EB9C; font-weight: 800;">dashboard Siswa</span>
+            </h2>
+        </div>
     </x-slot>
 
     <div class="py-8 px-4 sm:px-6 lg:px-8 bg-[#FDFDF9] min-h-screen">

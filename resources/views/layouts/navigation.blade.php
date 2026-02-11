@@ -240,6 +240,10 @@
             <a href="{{ route('users.index', ['type' => 'student']) }}" class="sidebar-link {{ request()->fullUrlIs(route('users.index', ['type'=>'student']).'*') ? 'active' : '' }}">
                 <i class="fa-solid fa-user-graduate"></i> Data Siswa
             </a>
+
+            <a href="{{ route('monitoring.index') }}" class="sidebar-link {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-tower-broadcast"></i> Monitoring Guru
+            </a>
             
             <a href="{{ route('classrooms.index') }}" class="sidebar-link {{ request()->routeIs('classrooms.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-school"></i> Kelas & Lokasi

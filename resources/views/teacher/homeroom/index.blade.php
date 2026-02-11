@@ -1,5 +1,11 @@
 <x-app-layout>
-    <x-slot name="header"></x-slot>
+       <x-slot name="header">
+        <div class="flex items-center justify-between header-section">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span style="color: #E4EB9C; font-weight: 800;">Area Wali Kelas</span>
+            </h2>
+        </div>
+    </x-slot>
 
     <style>
         :root {
@@ -81,7 +87,6 @@
             <!-- Banner Wali Kelas -->
             <div class="welcome-banner">
                 <div>
-                    <p class="text-[var(--mindaro)] text-xs font-bold uppercase tracking-widest mb-1">Area Wali Kelas</p>
                     <h1 class="text-2xl font-black">Kelas {{ $classroom->name }}</h1>
                     <p class="text-white/80 text-sm mt-1">Kelola perizinan siswa Anda di sini.</p>
                 </div>

@@ -7,5 +7,5 @@ use Illuminate\Database\Eloquent\Model;
 class Subject extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'code'];
+    protected $fillable = ['name', 'code', 'grade_level'];
 }

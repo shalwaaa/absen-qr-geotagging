@@ -258,7 +258,7 @@
 
                         @if($type == 'teacher')
                         <p class="text-xs text-gray-500">*Guru Piket bisa membuka kelas guru lain.</p>
-                        <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center">
+                        <div class="mb-4 p-3 bg-yellow-50  border-yellow-200 rounded-lg flex items-center">
                             <input id="is_piket" type="checkbox" name="is_piket" value="1" 
                                    class="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-pointer">
                             <label for="is_piket" class="ml-2 text-sm font-bold text-gray-700 cursor-pointer">

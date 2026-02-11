@@ -230,7 +230,6 @@
                 <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                     <span style="color: #E4EB9C; font-weight: 800;">Manajemen Kelas & Lokasi</span>
                 </h2>
-                <p class="text-sm text-slate-500 mt-1">Kelola area absensi dan koordinat ruang kelas</p>
             </div>
             <div class="hidden sm:block">
                 {{-- <span class="px-3 py-1 bg-green-50 text-green-700 text-xs font-bold rounded-full border border-green-200">

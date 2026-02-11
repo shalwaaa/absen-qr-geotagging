@@ -11,6 +11,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HomeroomController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
@@ -33,45 +34,100 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // LOGIC REDIRECT DASHBOARD
 
     Route::get('/dashboard', function () {
-        $role = Auth::user()->role;
+            $role = Auth::user()->role;
 
-        if ($role == 'teacher') {
-            return redirect()->route('teacher.dashboard');
-        } 
-        
-        elseif ($role == 'admin') {
-            // --- LOGIC UNTUK DATA DASHBOARD ADMIN ---
+            if ($role == 'teacher') {
+                return redirect()->route('teacher.dashboard');
+            } 
             
-            // 1. Hitung Data Statistik
+            elseif ($role == 'admin') {
+            // 1. Statistik Utama
             $jumlah_siswa = User::where('role', 'student')->count();
             $jumlah_guru  = User::where('role', 'teacher')->count();
             $jumlah_kelas = Classroom::count();
             $jumlah_mapel = Subject::count();
 
-            // 2. Ambil Jadwal Hari Ini (Limit 5 saja biar rapi)
-            Carbon::setLocale('id');
-            $hari_ini = Carbon::now()->isoFormat('dddd'); // Senin, Selasa...
-            
-            $schedules_today = Schedule::with(['teacher', 'subject', 'classroom'])
-                                ->where('day', $hari_ini)
-                                ->orderBy('start_time')
-                                ->take(5)
-                                ->get();
+            // 2. LOGIK GRAFIK PER JURUSAN
+            // Ambil Tingkat dari Request (Default: Kelas 10)
+            $selectedGrade = request('grade', 10); 
 
-            // 3. Ambil List Kelas & Mapel (Untuk Widget Kanan)
-            $classrooms_list = Classroom::latest()->take(4)->get();
-            $subjects_list   = Subject::inRandomOrder()->take(8)->get();
+            // Daftar Jurusan (Sesuaikan dengan singkatan di nama kelas)
+            $majors = ['PPLG', 'TJKT', 'MPLB', 'AKKUL', 'PS'];
+            
+            // Siapkan Bulan (6 Bulan Terakhir)
+            $months = [];
+            $chartLabels = [];
+            for ($i = 5; $i >= 0; $i--) {
+                $date = Carbon::now()->subMonths($i);
+                $months[] = $date;
+                $chartLabels[] = $date->translatedFormat('F');
+            }
+
+            $charts = []; // Array untuk menampung data semua chart
+
+            // Warna Garis (Variasi Hijau/Bumi)
+            $colors = ['#2D5128', '#8DA750', '#E4EB9C', '#d97706', '#1F2937'];
+
+            foreach ($majors as $major) {
+                // Cari kelas sesuai Tingkat & Jurusan
+                // Contoh: Tingkat 10, Nama mengandung "PPLG"
+                $classes = Classroom::where('grade_level', $selectedGrade)
+                            ->where('name', 'LIKE', "%$major%")
+                            ->get();
+                
+                $datasets = [];
+
+                foreach ($classes as $idx => $class) {
+                    $dataPoints = [];
+                    foreach ($months as $month) {
+                        // Hitung Hadir
+                        $hadir = \App\Models\Attendance::whereHas('meeting.schedule', function($q) use ($class) {
+                                    $q->where('classroom_id', $class->id);
+                                })
+                                ->where('status', 'present')
+                                ->whereMonth('scan_time', $month->month)
+                                ->whereYear('scan_time', $month->year)
+                                ->count();
+                        
+                        // Hitung Kapasitas (Siswa x Sesi)
+                        $siswaCount = $class->students()->where('role', 'student')->count();
+                        $sesiCount = \App\Models\Meeting::whereHas('schedule', function($q) use ($class) {
+                                    $q->where('classroom_id', $class->id);
+                                })
+                                ->whereMonth('date', $month->month)
+                                ->count();
+
+                        $max = $siswaCount * $sesiCount;
+                        $percentage = ($max > 0) ? round(($hadir / $max) * 100) : 0;
+                        $dataPoints[] = $percentage;
+                    }
+
+                    // Masukkan ke Dataset Grafik
+                    $datasets[] = [
+                        'label' => $class->name,
+                        'data' => $dataPoints,
+                        'borderColor' => $colors[$idx % count($colors)], // Loop warna
+                        'backgroundColor' => 'transparent',
+                        'borderWidth' => 3,
+                        'pointRadius' => 4,
+                        'tension' => 0.3
+                    ];
+                }
+
+                // Simpan data chart per jurusan jika ada kelasnya
+                if ($classes->count() > 0) {
+                    $charts[$major] = [
+                        'labels' => $chartLabels,
+                        'datasets' => $datasets
+                    ];
+                }
+            }
 
             return view('admin.dashboard', compact(
-                'jumlah_siswa', 
-                'jumlah_guru', 
-                'jumlah_kelas', 
-                'jumlah_mapel',
-                'schedules_today',
-                'classrooms_list',
-                'subjects_list'
+                'jumlah_siswa', 'jumlah_guru', 'jumlah_kelas', 'jumlah_mapel',
+                'charts', 'selectedGrade'
             ));
-        } 
+        }
         
     else {
         // --- LOGIC DATA DASHBOARD SISWA ---
@@ -145,6 +201,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
     Route::post('/meetings/{id}/regenerate', [MeetingController::class, 'regenerateQr'])->name('meetings.regenerate');
+
+    // Route Monitoring Guru
+    Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
+
+    // Route untuk memanggil Guru Piket
+    Route::post('/monitoring/{id}/panggil', [MonitoringController::class, 'panggilPiket'])->name('monitoring.panggil');
 
     // =================== ROUTE SINKRONISASI ===================
     Route::prefix('sync')->group(function () {

@@ -128,6 +128,15 @@
                             <input type="text" name="code" class="form-input" placeholder="Contoh: MTK-01">
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">Tingkat Kelas</label>
+                            <select name="grade_level" class="form-input">
+                                <option value="10">Kelas 10</option>
+                                <option value="11">Kelas 11</option>
+                                <option value="12">Kelas 12</option>
+                            </select>
+                        </div>
+
                         <div class="form-actions">
                             <a href="{{ route('subjects.index') }}" class="btn-cancel">
                                 <i class="fa-solid fa-arrow-left"></i> Batal

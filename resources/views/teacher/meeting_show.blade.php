@@ -36,13 +36,13 @@
         <div class="flex justify-between items-center animate-fade-in">
             <div>
                 <h2 class="font-bold text-xl text-gray-800">
-                    <span style="color: #8DA750;">Monitoring:</span> 
-                    <span class="text-[#2D5128]">{{ $meeting->schedule->subject->name }}</span>
+                    <span style="color: #E4EB9C;">Monitoring:</span> 
+                    <span style="color: #E4EB9C;">{{ $meeting->schedule->subject->name }}</span>
                 </h2>
-                <p class="text-sm text-gray-500 mt-1">Kelas: {{ $meeting->schedule->classroom->name }}</p>
+                <p class="text-sm text-gray-500 mt-1"style="color: #E4EB9C;">Kelas: {{ $meeting->schedule->classroom->name }}</p>
             </div>
             <div class="text-right">
-                <span class="font-bold text-white bg-[#4a6741] px-4 py-2 rounded-lg text-sm">
+                <span class="font-bold text-white px-4 py-2 rounded-lg text-sm">
                     {{ \Carbon\Carbon::parse($meeting->date)->format('d F Y') }}
                 </span>
             </div>

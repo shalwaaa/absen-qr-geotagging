@@ -7,11 +7,30 @@ use Illuminate\Http\Request;
 
 class SubjectController extends Controller
 {
-    public function index()
-    {
-        $subjects = Subject::latest()->paginate(10);
-        return view('admin.subjects.index', compact('subjects'));
-    }
+    public function index(Request $request)
+        {
+            $grade = $request->query('grade'); // Ambil filter tingkat
+            $search = $request->query('search');
+
+            $query = \App\Models\Subject::query();
+
+            // Filter Tingkat
+            if ($grade) {
+                $query->where('grade_level', $grade);
+            }
+
+            // Filter Search
+            if ($search) {
+                $query->where('name', 'LIKE', "%{$search}%");
+            }
+
+            $subjects = $query->orderBy('grade_level', 'asc')
+                            ->orderBy('name', 'asc')
+                            ->paginate(10)
+                            ->withQueryString();
+
+            return view('admin.subjects.index', compact('subjects', 'grade', 'search'));
+        }
 
     public function create()
     {

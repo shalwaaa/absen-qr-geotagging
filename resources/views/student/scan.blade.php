@@ -49,9 +49,11 @@
     </style>
 
     <x-slot name="header">
-        <h2 class="font-bold text-xl text-gray-800 leading-tight animate-fade-in">
-            <span style="color: #4a6741;">Presensi:</span> Scan QR Code
-        </h2>
+        <div class="flex items-center justify-between header-section">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span style="color: #E4EB9C; font-weight: 800;">Presensi QR Code</span>
+            </h2>
+        </div>
     </x-slot>
 
     <div class="py-8 animate-fade-in">

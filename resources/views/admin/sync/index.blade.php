@@ -4,7 +4,6 @@
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
                 <span style="color: #E4EB9C; font-weight: 800;">Sinkronisasi Data Pusat</span>
             </h2>
-            <p class="text-sm text-slate-500 mt-1">Integrasi data dengan sistem pusat sekolah</p>
         </div>
     </x-slot>
     
@@ -419,8 +418,8 @@
                         <strong>Informasi Penting:</strong>
                         <ul class="mt-1 ml-4 list-disc">
                             <li>Pastikan koneksi internet stabil (Proses memakan waktu 30-60 menit lebih)</li>
-                            <li>Data guru akan diperbarui/ditambah tanpa menghapus data lama</li>
-                            <li>Data siswa akan dipetakan ke tahun ajaran yang dipilih</li>
+                            <li>Data guru akan diperbarui/ditambah tanpa menghapus data lama.</li>
+                            <li>Data siswa akan dihapus dan diganti dengan data baru dari pusat.</li>
                         </ul>
                     </div>
                 </div>

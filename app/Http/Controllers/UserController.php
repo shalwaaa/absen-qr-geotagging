@@ -59,7 +59,10 @@ class UserController extends Controller
         $type = $request->query('type', 'student');
         $classrooms = Classroom::all(); 
         
-        return view('admin.users.create', compact('type', 'classrooms'));
+        // TAMBAHAN: Cek apakah sudah ada Kepala Sekolah?
+        $existingHeadmaster = User::where('is_headmaster', true)->first();
+        
+        return view('admin.users.create', compact('type', 'classrooms', 'existingHeadmaster'));
     }
 
     public function store(Request $request)
@@ -80,6 +83,7 @@ class UserController extends Controller
             'classroom_id' => $request->role == 'student' ? $request->classroom_id : null,
             'password' => Hash::make('smakzie123'),
             'is_piket' => $request->has('is_piket'), 
+            'is_headmaster' => $request->has('is_headmaster'),
         ]);
 
         return redirect()->route('users.index', ['type' => $request->role])
@@ -89,7 +93,15 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $classrooms = Classroom::all();
-        return view('admin.users.edit', compact('user', 'classrooms'));
+        
+        // Cek apakah ada user lain yang sudah jadi headmaster
+        $existingHeadmaster = User::where('is_headmaster', true)
+                                  ->where('id', '!=', $user->id) // Kecuali user yang sedang diedit
+                                  ->first();
+
+        
+
+        return view('admin.users.edit', compact('user', 'classrooms', 'existingHeadmaster'));
     }
 
     public function update(Request $request, User $user)
@@ -101,17 +113,24 @@ class UserController extends Controller
             'classroom_id' => 'nullable|required_if:role,student|exists:classrooms,id',
         ]);
 
+        if ($request->has('is_headmaster') && $request->is_headmaster == '1') {
+            User::where('is_headmaster', true)->update(['is_headmaster' => false]);
+        }
+
         $user->update([
             'name' => $request->name,
             'email' => $request->email,
             'nip_nis' => $request->nip_nis,
             'classroom_id' => $user->role == 'student' ? $request->classroom_id : null,
             'is_piket' => $request->has('is_piket'), // PASTIKAN INI ADA
+            'is_headmaster' => $request->has('is_headmaster'),
         ]);
 
         if ($request->filled('password')) {
             $user->update(['password' => Hash::make($request->password)]);
         }
+
+        
 
         return redirect()->route('users.index', ['type' => $user->role])
                         ->with('success', 'Data berhasil diperbarui!');

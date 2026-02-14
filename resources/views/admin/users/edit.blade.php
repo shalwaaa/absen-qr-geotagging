@@ -188,6 +188,31 @@
                                 Tugaskan sebagai Guru Piket / Pengganti?
                             </label>
                         </div>
+                            <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                @if(isset($existingHeadmaster) && !$user->is_headmaster)
+                                    <!-- Skenario: Sudah ada Kepsek Lain -->
+                                    <div class="flex items-center gap-3">
+                                        <div class="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs text-gray-500 font-bold">!</div>
+                                        <div>
+                                            <p class="text-sm font-bold text-gray-700">Posisi Kepala Sekolah Terisi</p>
+                                            <p class="text-xs text-blue-600">Saat ini dijabat oleh: <strong>{{ $existingHeadmaster->name }}</strong></p>
+                                        </div>
+                                    </div>
+                                    <!-- Input hidden biar form ga error, nilainya 0 -->
+                                    <input type="hidden" name="is_headmaster" value="0">
+                                @else
+                                    <!-- Skenario: Belum ada Kepsek ATAU User ini adalah Kepseknya -->
+                                    <div class="flex items-center">
+                                        <input id="is_headmaster" type="checkbox" name="is_headmaster" value="1" 
+                                            {{ $user->is_headmaster ? 'checked' : '' }}
+                                            class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer">
+                                        <label for="is_headmaster" class="ml-2 text-sm font-bold text-gray-700 cursor-pointer">
+                                            Jadikan Kepala Sekolah?
+                                        </label>
+                                    </div>
+                                @endif
+                            </div>
+
                         @endif
 
                         <div class="form-actions">

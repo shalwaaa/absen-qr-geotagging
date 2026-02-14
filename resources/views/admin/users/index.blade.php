@@ -419,11 +419,19 @@
                                     <div class="teacher-name-container">
                                         <span class="font-medium text-slate-800">{{ $u->name }}</span>
                                         <!-- TAMPILKAN BADGE JIKA GURU PIKET -->
-                                        @if($type == 'teacher' && $u->is_piket)
-                                            <span class="badge-piket" title="Guru Piket">
-                                                <i class="fa-solid fa-shield-halved"></i>
-                                                PIKET
-                                            </span>
+                                        @if($type == 'teacher')
+                                            @if($u->is_piket)
+                                                <span class="badge-piket" title="Guru Piket">
+                                                    <i class="fa-solid fa-shield-halved"></i> PIKET
+                                                </span>
+                                            @endif
+                                            
+                                            <!-- BARU: BADGE KEPALA SEKOLAH -->
+                                            @if($u->is_headmaster)
+                                                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200 uppercase ml-2">
+                                                    <i class="fa-solid fa-user-tie"></i> Kepala Sekolah
+                                                </span>
+                                            @endif
                                         @endif
                                     </div>
                                 </td>

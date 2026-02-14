@@ -28,7 +28,7 @@ class LeaveRequestController extends Controller
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'reason' => 'required|string',
-            'attachment' => 'nullable|image|max:2048', // Bukti foto (opsional/wajib)
+            'attachment' => 'nullable|image|max:2048',
         ]);
 
         $path = null;
@@ -36,9 +36,12 @@ class LeaveRequestController extends Controller
             $path = $request->file('attachment')->store('attachments', 'public');
         }
 
+        // Logic Guru vs Siswa
+        $user = Auth::user();
+        
         LeaveRequest::create([
-            'student_id' => Auth::id(),
-            'classroom_id' => Auth::user()->classroom_id, // Mengambil kelas saat ini
+            'student_id' => $user->id, // User ID (bisa guru/siswa)
+            'classroom_id' => $user->role == 'student' ? $user->classroom_id : null, // Guru = Null
             'type' => $request->type,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
@@ -47,6 +50,6 @@ class LeaveRequestController extends Controller
             'status' => 'pending'
         ]);
 
-        return redirect()->route('leaves.index')->with('success', 'Pengajuan berhasil dikirim ke Wali Kelas.');
+        return redirect()->route('leaves.index')->with('success', 'Pengajuan berhasil dikirim.');
     }
 }

@@ -222,7 +222,7 @@
         </a>
     </div>
 
-    <nav class="sidebar-menu">
+<nav class="sidebar-menu">
         <!-- === MENU UMUM === -->
         <div class="sidebar-section">Utama</div>
         <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -257,6 +257,12 @@
                 <i class="fa-solid fa-calendar-days"></i> Jadwal Pelajaran
             </a>
 
+            <!-- MENU APPROVAL UNTUK ADMIN -->
+            <div class="sidebar-section">Approval</div>
+            <a href="{{ route('headmaster.index') }}" class="sidebar-link {{ request()->routeIs('headmaster.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-user-tie"></i> Validasi Izin Guru
+            </a>
+
             <div class="sidebar-section">Sistem</div>
             <a href="{{ route('sync.index') }}" class="sidebar-link {{ request()->routeIs('sync.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi API
@@ -272,6 +278,16 @@
         @if(Auth::user()->role == 'teacher')
             <div class="sidebar-section">Aktifitas</div>
             
+            <a href="{{ route('teacher.dashboard') }}" class="sidebar-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
+                <i class="fa-solid fa-calendar-check"></i> Jadwal Saya
+            </a>
+
+            <!-- Menu Ajukan Izin (Semua Guru) -->
+            <a href="{{ route('leaves.index') }}" class="sidebar-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-envelope-open-text"></i> Ajukan Izin
+            </a>
+
+            <!-- Menu Wali Kelas (Hanya jika punya kelas) -->
             @php
                 $isHomeroom = \App\Models\Classroom::where('homeroom_teacher_id', Auth::id())->exists();
             @endphp
@@ -282,9 +298,18 @@
                 </a>
             @endif
 
+            <!-- Menu Guru Piket -->
             @if(Auth::user()->is_piket)
                 <a href="{{ route('teacher.piket') }}" class="sidebar-link {{ request()->routeIs('teacher.piket') ? 'active' : '' }}">
                     <i class="fa-solid fa-shield-halved"></i> Menu Piket
+                </a>
+            @endif
+
+            <!-- MENU KHUSUS KEPALA SEKOLAH -->
+            @if(Auth::user()->is_headmaster)
+                <div class="sidebar-section">Kepala Sekolah</div>
+                <a href="{{ route('headmaster.index') }}" class="sidebar-link {{ request()->routeIs('headmaster.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-user-tie"></i> Validasi Izin Guru
                 </a>
             @endif
         @endif

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\HeadmasterController;
 use App\Http\Controllers\HomeroomController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\MeetingController;
@@ -207,6 +208,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Route untuk memanggil Guru Piket
     Route::post('/monitoring/{id}/panggil', [MonitoringController::class, 'panggilPiket'])->name('monitoring.panggil');
+
+    // Route Khusus Kepala Sekolah
+    Route::get('/headmaster/leaves', [HeadmasterController::class, 'index'])->name('headmaster.index');
+    Route::post('/headmaster/leaves/{id}', [HeadmasterController::class, 'updateStatus'])->name('headmaster.update');
 
     // =================== ROUTE SINKRONISASI ===================
     Route::prefix('sync')->group(function () {

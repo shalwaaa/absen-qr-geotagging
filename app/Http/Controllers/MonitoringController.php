@@ -15,13 +15,11 @@ class MonitoringController extends Controller
         Carbon::setLocale('id');
 
         $search = $request->input('search');
-        $todayDate = Carbon::now('Asia/Jakarta')->toDateString();
         $todayName = Carbon::now('Asia/Jakarta')->isoFormat('dddd'); // Senin, Selasa...
-
-        // Query dasar jadwal hari ini
+        
+        // Query dasar jadwal hari ini (Berdasarkan Hari, bukan tanggal buat jadwal)
         $query = Schedule::with(['teacher', 'subject', 'classroom'])
-            ->where('day', $todayName)
-            ->whereDate('created_at', $todayDate);
+            ->where('day', $todayName);
 
         // Fitur search guru / mapel
         if ($search) {
@@ -41,6 +39,7 @@ class MonitoringController extends Controller
 
         $monitoringData = $schedules->map(function ($schedule) use ($now) {
 
+            // Ambil meeting beserta relasi absensi
             $meeting = Meeting::where('schedule_id', $schedule->id)
                 ->whereDate('date', $now->toDateString())
                 ->with('opener')
@@ -52,17 +51,40 @@ class MonitoringController extends Controller
             $lateThreshold = $start->copy()->addMinutes(15);
 
             // ===== LOGIKA STATUS =====
+            $status = '';
+            $badgeClass = '';
+            $keterangan = '';
+            
             if ($meeting) {
-                if ($meeting->opened_by == $schedule->teacher_id) {
-                    $status = 'Hadir';
-                    $badgeClass = 'bg-green-100 text-green-700 border-green-200';
-                    $keterangan = 'Mengajar di kelas';
+                // [BARU] Hitung jumlah siswa yang sudah scan di sesi ini
+                // Kita filter whereHas 'student' role 'student' untuk memastikan bukan guru yg kehitung
+                $studentCount = $meeting->attendances()
+                    ->whereHas('student', function($q) {
+                        $q->where('role', 'student');
+                    })
+                    ->count();
+
+                // Cek Validasi Kehadiran
+                if ($studentCount > 0) {
+                    // VALID: Ada siswa yang scan
+                    if ($meeting->opened_by == $schedule->teacher_id) {
+                        $status = 'Hadir';
+                        $badgeClass = 'bg-green-100 text-green-700 border-green-200';
+                        $keterangan = 'KBM Berjalan (' . $studentCount . ' Siswa)';
+                    } else {
+                        $status = 'Digantikan';
+                        $badgeClass = 'bg-yellow-100 text-yellow-700 border-yellow-200';
+                        $keterangan = 'Oleh: ' . ($meeting->opener->name ?? 'Guru Piket');
+                    }
                 } else {
-                    $status = 'Digantikan';
-                    $badgeClass = 'bg-yellow-100 text-yellow-700 border-yellow-200';
-                    $keterangan = 'Oleh: ' . ($meeting->opener->name ?? 'Guru Piket');
+                    // INVALID: Sesi dibuka tapi belum ada siswa
+                    $status = 'Sesi Kosong';
+                    $badgeClass = 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse';
+                    $keterangan = 'Sesi dibuka, belum ada siswa scan';
                 }
+
             } else {
+                // Sesi BELUM dibuka
                 if ($now < $start) {
                     $status = 'Menunggu';
                     $badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
@@ -91,24 +113,34 @@ class MonitoringController extends Controller
             ];
         });
 
-        // Yang terlambat paling atas
-        $monitoringData = $monitoringData->sortByDesc('is_urgent');
+        // Sorting: Terlambat -> Sesi Kosong -> Lainnya
+        $monitoringData = $monitoringData->sort(function ($a, $b) {
+            $priority = [
+                'Terlambat' => 1,
+                'Sesi Kosong' => 2, // Prioritas kedua untuk dicek admin
+                'Belum Masuk' => 3,
+                'Digantikan' => 4,
+                'Hadir' => 5,
+                'Menunggu' => 6,
+                'Selesai (Tanpa Kabar)' => 7
+            ];
+            
+            $valA = $priority[$a->status] ?? 99;
+            $valB = $priority[$b->status] ?? 99;
+            
+            return $valA <=> $valB;
+        });
 
         return view('admin.monitoring.index', [
             'monitoringData' => $monitoringData,
             'today' => $todayName,
             'search' => $search,
         ]);
-
     }
 
-
-    // Fungsi untuk Admin memanggil Guru Piket
     public function panggilPiket($id)
     {
         $schedule = Schedule::findOrFail($id);
-        
-        // Toggle status (kalau 0 jadi 1, kalau 1 jadi 0)
         $schedule->request_piket = !$schedule->request_piket;
         $schedule->save();
 

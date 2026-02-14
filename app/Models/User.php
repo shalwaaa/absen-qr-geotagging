@@ -22,7 +22,8 @@ class User extends Authenticatable
         'nip_nis',
         'classroom_id',
         'is_piket', // TAMBAHKAN INI!
-        // 'status',
+        'status',
+        'is_headmaster',
     ];
 
     /**
@@ -42,6 +43,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_piket' => 'boolean', // TAMBAHKAN CASTING UNTUK BOOLEAN
+            'is_headmaster' => 'boolean',
         ];
     }
 

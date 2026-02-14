@@ -10,32 +10,37 @@ use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
+    // 1. Tampilkan Halaman Scan
     public function index()
     {
         return view('student.scan');
     }
 
+    // 2. Proses Data Scan
     public function store(Request $request)
     {
+        // Validasi input
         $request->validate([
             'qr_token' => 'required',
             'latitude' => 'required',
             'longitude' => 'required',
         ]);
 
-        // 1. CEK STATUS SISWA DULU (Pindahkan ke sini)
+        // CEK 1: Status Siswa (Active/Lulus/Keluar)
         if (Auth::user()->status != 'active') {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Status Anda tidak aktif / sudah lulus.'
+                'message' => 'Status akun Anda tidak aktif / sudah lulus.'
             ], 403);
         }
 
         try {
+            // Cari Meeting berdasarkan Token
             $meeting = Meeting::where('qr_token', $request->qr_token)
                               ->with('schedule.classroom')
                               ->first();
 
+            // Validasi Dasar Meeting
             if (!$meeting) {
                 return response()->json(['status' => 'error', 'message' => 'QR Code Salah/Tidak Ditemukan.'], 404);
             }
@@ -48,6 +53,33 @@ class AttendanceController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Data Jadwal/Kelas tidak lengkap.'], 500);
             }
 
+            // ========================================================
+            // [BARU] VALIDASI KELAS SISWA (Anti Salah Masuk Kelas)
+            // ========================================================
+            $studentClassId = Auth::user()->classroom_id;
+            $meetingClassId = $meeting->schedule->classroom_id;
+
+            // 1. Cek apakah siswa punya kelas?
+            if (!$studentClassId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Anda belum terdaftar di kelas manapun. Hubungi Admin.'
+                ], 403);
+            }
+
+            // 2. Cek apakah kelas siswa SAMA dengan kelas jadwal?
+            if ($studentClassId != $meetingClassId) {
+                $studentClassName = Auth::user()->classroom->name ?? '-';
+                // Pesan Error Detail
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Anda siswa kelas $studentClassName. Tidak bisa absen di kelas ini."
+                ], 403);
+            }
+            // ========================================================
+
+
+            // Validasi Double Absen
             $alreadyPresent = Attendance::where('meeting_id', $meeting->id)
                                         ->where('student_id', Auth::id())
                                         ->exists();
@@ -55,6 +87,7 @@ class AttendanceController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Anda sudah absen di sesi ini!'], 400);
             }
 
+            // Validasi Jarak (Geofencing)
             $schoolLat = $meeting->schedule->classroom->latitude;
             $schoolLng = $meeting->schedule->classroom->longitude;
             $radiusAllowed = $meeting->schedule->classroom->radius_meters;
@@ -75,6 +108,7 @@ class AttendanceController extends Controller
                 ], 400);
             }
 
+            // SIMPAN DATA
             Attendance::create([
                 'meeting_id' => $meeting->id,
                 'student_id' => Auth::id(),
@@ -90,6 +124,7 @@ class AttendanceController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            // Tangkap Error Server
             Log::error("Error Absensi: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',
@@ -98,6 +133,7 @@ class AttendanceController extends Controller
         }
     }
 
+    // Rumus Haversine
     private function calculateDistance($lat1, $lon1, $lat2, $lon2)
     {
         $earthRadius = 6371000; 

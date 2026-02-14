@@ -382,6 +382,7 @@
                 </form>
 
                 <div class="flex flex-wrap gap-3 w-full lg:w-auto">
+
                     <form action="{{ route('users.import') }}" method="POST" enctype="multipart/form-data" class="import-zone flex-1 lg:flex-none">
                         @csrf
                         <input type="hidden" name="type" value="{{ $type }}">
@@ -467,11 +468,20 @@
 
                 @if($users->hasPages())
                 <div class="custom-pagination">
+                    
                     <div class="pagination-info">
-                        Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }}
+                        {{-- Menampilkan {{ $users->firstItem() ?? 0 }} - {{ $users->lastItem() ?? 0 }} dari {{ $users->total() }}
                         @if($type == 'teacher')
                             • <span class="text-amber-600 font-semibold">{{ $users->where('is_piket', true)->count() }} Guru Piket</span>
-                        @endif
+                        @endif --}}
+                    <form action="{{ route('users.delete_all') }}" method="POST" onsubmit="return confirm('PERINGATAN KERAS:\n\nAnda akan menghapus SEMUA data {{ $type == 'teacher' ? 'Guru' : 'Siswa' }} beserta riwayat absensinya.\n\nTindakan ini TIDAK BISA DIBATALKAN.\n\nApakah Anda yakin ingin melanjutkan?');">
+                        @csrf
+                        @method('DELETE')
+                        <input type="hidden" name="type" value="{{ $type }}">
+                        <button type="submit" class="btn-danger-outline" style="height: 100%; border-radius: 12px;">
+                            <i class="fa-solid fa-trash-can"></i> Reset
+                        </button>
+                    </form>
                     </div>
                     
                     <div class="pagination-links">

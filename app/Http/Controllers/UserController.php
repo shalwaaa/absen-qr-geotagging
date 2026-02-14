@@ -159,4 +159,20 @@ class UserController extends Controller
         }
     }
 
+    // Fungsi Hapus Massal
+    public function deleteAll(Request $request)
+    {
+        $type = $request->input('type'); // 'teacher' atau 'student'
+
+        if (!in_array($type, ['teacher', 'student'])) {
+            return back()->with('error', 'Tipe user tidak valid.');
+        }
+
+        // Hapus semua user dengan role tersebut
+        // Hati-hati: cascade delete akan menghapus data absensi & history rombel juga
+        User::where('role', $type)->delete();
+
+        return back()->with('success', 'Semua data ' . ($type == 'teacher' ? 'Guru' : 'Siswa') . ' berhasil dihapus.');
+    }
+
 }

@@ -213,6 +213,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/headmaster/leaves', [HeadmasterController::class, 'index'])->name('headmaster.index');
     Route::post('/headmaster/leaves/{id}', [HeadmasterController::class, 'updateStatus'])->name('headmaster.update');
 
+    // Route untuk delete all users (HATI-HATI)
+    Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
+
     // =================== ROUTE SINKRONISASI ===================
     Route::prefix('sync')->group(function () {
         // Halaman utama sinkronisasi

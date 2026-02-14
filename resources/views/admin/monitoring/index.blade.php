@@ -211,6 +211,7 @@
         .badge-belum { background-color: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
         .badge-terlambat { background-color: #fee2e2; color: #991b1b; border-color: #fecaca; }
         .badge-menunggu { background-color: #f3f4f6; color: #4b5563; border-color: #e5e7eb; }
+        .badge-ungu { background-color: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
 
         /* IMPROVED BUTTONS */
         .btn-refresh {
@@ -570,36 +571,49 @@
 
                                     <!-- STATUS -->
                                     <td class="text-center">
-                                        <span class="badge-status {{ $data->badge_class }}">
+                                        <span class="badge-status {{ $data->badge_class }} {{ ($data->status == 'Sakit' || $data->status == 'Izin') ? 'badge-ungu' : '' }}">
                                             {{ $data->status }}
                                         </span>
                                     </td>
 
                                     <!-- AKSI -->
-                                    <td>
-                                        @if($data->status == 'Terlambat' || $data->status == 'Belum Masuk')
-                                            <form action="{{ route('monitoring.panggil', $data->schedule->id) }}" method="POST" class="inline-block">
-                                                @csrf
-                                                @if($data->schedule->request_piket)
-                                                    <button type="submit" class="btn-panggil btn-batal-panggil">
-                                                        <i class="fa-solid fa-bell-slash"></i> BATALKAN
-                                                    </button>
-                                                @else
-                                                    <button type="submit" class="btn-panggil btn-panggil-piket">
-                                                        <i class="fa-solid fa-bell"></i> PANGGIL PIKET
-                                                    </button>
-                                                @endif
-                                            </form>
-                                        @elseif($data->is_urgent)
-                                            <span class="text-xs font-bold text-red-600">
-                                                {{ $data->keterangan }}
-                                            </span>
-                                        @else
-                                            <span class="text-sm text-gray-500">
-                                                {{ $data->keterangan }}
-                                            </span>
-                                        @endif
-                                    </td>
+                                    <!-- AKSI -->
+<td>
+    {{-- Cek kondisi: Terlambat, Belum Masuk, Sakit, atau Izin --}}
+    @if(in_array($data->status, ['Terlambat', 'Belum Masuk', 'Sakit', 'Izin']))
+        
+        <form action="{{ route('monitoring.panggil', $data->schedule->id) }}" method="POST">
+            @csrf
+            
+            @if($data->schedule->request_piket)
+                <!-- Tombol Batal -->
+                <button type="submit" class="btn-panggil btn-batal-panggil">
+                    <i class="fa-solid fa-bell-slash"></i> BATALKAN
+                </button>
+                <div class="mt-1 text-[10px] text-red-600 font-bold animate-pulse">
+                    Piket Dipanggil...
+                </div>
+            @else
+                <!-- Tombol Panggil -->
+                <button type="submit" class="btn-panggil btn-panggil-piket">
+                    @if($data->status == 'Sakit' || $data->status == 'Izin')
+                        <i class="fa-solid fa-user-shield"></i> GANTIKAN (IZIN)
+                    @else
+                        <i class="fa-solid fa-bell"></i> PANGGIL PIKET
+                    @endif
+                </button>
+            @endif
+        </form>
+
+    @elseif($data->is_urgent) 
+        <!-- Kasus urgent lain (misal Sesi Kosong) -->
+        <span class="text-xs font-bold text-red-600">{{ $data->keterangan }}</span>
+        
+    @else
+        <!-- Hadir / Menunggu / Digantikan -->
+        <span class="text-sm text-gray-500">{{ $data->keterangan }}</span>
+    @endif
+</td>
                                 </tr>
                             @empty
                                 <tr>
@@ -652,6 +666,10 @@
                 <div class="legend-item">
                     <span class="legend-dot animate-pulse" style="background-color: #ef4444;"></span>
                     <span class="legend-text">Terlambat (>15 Menit)</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot" style="background-color: #9333ea;"></span> <!-- Ungu -->
+                    <span class="legend-text">Guru Izin / Sakit</span>
                 </div>
                 <div class="legend-item">
                     <span class="legend-dot" style="background-color: #9ca3af;"></span>

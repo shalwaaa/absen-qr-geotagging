@@ -7,84 +7,86 @@ use App\Models\Meeting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class MonitoringController extends Controller
 {
     public function index(Request $request)
     {
         Carbon::setLocale('id');
-
         $search = $request->input('search');
-        $todayName = Carbon::now('Asia/Jakarta')->isoFormat('dddd'); // Senin, Selasa...
-        
-        // Query dasar jadwal hari ini (Berdasarkan Hari, bukan tanggal buat jadwal)
+        $todayName = Carbon::now('Asia/Jakarta')->isoFormat('dddd');
+        $now = Carbon::now('Asia/Jakarta');
+
         $query = Schedule::with(['teacher', 'subject', 'classroom'])
             ->where('day', $todayName);
 
-        // Fitur search guru / mapel
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->whereHas('teacher', function ($teacherQuery) use ($search) {
-                    $teacherQuery->where('name', 'like', "%{$search}%");
-                })->orWhereHas('subject', function ($subjectQuery) use ($search) {
-                    $subjectQuery->where('name', 'like', "%{$search}%");
-                });
+                $q->whereHas('teacher', fn ($t) => $t->where('name', 'like', "%{$search}%"))
+                  ->orWhereHas('subject', fn ($s) => $s->where('name', 'like', "%{$search}%"));
             });
         }
 
         $schedules = $query->orderBy('start_time', 'asc')->get();
 
-        // ===== Monitoring Status =====
-        $now = Carbon::now('Asia/Jakarta');
-
         $monitoringData = $schedules->map(function ($schedule) use ($now) {
 
-            // Ambil meeting beserta relasi absensi
+            // 1. Cek Meeting (Apakah sudah buka kelas?)
             $meeting = Meeting::where('schedule_id', $schedule->id)
                 ->whereDate('date', $now->toDateString())
                 ->with('opener')
                 ->first();
 
+            // 2. Cek Izin/Sakit Guru (Apakah guru ini punya izin hari ini?)
+            $leave = \App\Models\LeaveRequest::where('student_id', $schedule->teacher_id) // Ingat: user_id guru ada di kolom student_id
+                ->where('status', 'approved') // Harus yang sudah disetujui Kepsek/Admin
+                ->whereDate('start_date', '<=', $now->toDateString())
+                ->whereDate('end_date', '>=', $now->toDateString())
+                ->first();
+
             $start = Carbon::parse($schedule->start_time, 'Asia/Jakarta');
             $end   = Carbon::parse($schedule->end_time, 'Asia/Jakarta');
-
             $lateThreshold = $start->copy()->addMinutes(15);
 
-            // ===== LOGIKA STATUS =====
+            // ===== LOGIKA STATUS PRIORITAS =====
             $status = '';
             $badgeClass = '';
             $keterangan = '';
-            
+            $isUrgent = false; // Trigger tombol panggil piket
+
             if ($meeting) {
-                // [BARU] Hitung jumlah siswa yang sudah scan di sesi ini
-                // Kita filter whereHas 'student' role 'student' untuk memastikan bukan guru yg kehitung
+                // KASUS A: Meeting Sudah Ada
                 $studentCount = $meeting->attendances()
-                    ->whereHas('student', function($q) {
-                        $q->where('role', 'student');
-                    })
+                    ->whereHas('student', fn($q) => $q->where('role', 'student'))
                     ->count();
 
-                // Cek Validasi Kehadiran
                 if ($studentCount > 0) {
-                    // VALID: Ada siswa yang scan
                     if ($meeting->opened_by == $schedule->teacher_id) {
                         $status = 'Hadir';
                         $badgeClass = 'bg-green-100 text-green-700 border-green-200';
-                        $keterangan = 'KBM Berjalan (' . $studentCount . ' Siswa)';
+                        $keterangan = 'Mengajar di kelas';
                     } else {
                         $status = 'Digantikan';
                         $badgeClass = 'bg-yellow-100 text-yellow-700 border-yellow-200';
                         $keterangan = 'Oleh: ' . ($meeting->opener->name ?? 'Guru Piket');
                     }
                 } else {
-                    // INVALID: Sesi dibuka tapi belum ada siswa
                     $status = 'Sesi Kosong';
                     $badgeClass = 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse';
-                    $keterangan = 'Sesi dibuka, belum ada siswa scan';
+                    $keterangan = 'Sesi dibuka, belum ada siswa';
                 }
 
+            } elseif ($leave) {
+                // KASUS B: Guru Izin/Sakit (Resmi)
+                // Ini harus dianggap URGENT agar admin panggil piket
+                $status = ($leave->type == 'sick') ? 'Sakit' : 'Izin';
+                $badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
+                $keterangan = 'Guru berhalangan (' . Str::limit($leave->reason, 20) . ')';
+                $isUrgent = true; // Tetap urgent karena kelas kosong!
+
             } else {
-                // Sesi BELUM dibuka
+                // KASUS C: Tidak ada kabar
                 if ($now < $start) {
                     $status = 'Menunggu';
                     $badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
@@ -97,6 +99,7 @@ class MonitoringController extends Controller
                     $status = 'Terlambat';
                     $badgeClass = 'bg-red-100 text-red-700 border-red-200 animate-pulse';
                     $keterangan = '🚨 PERLU GURU PIKET!';
+                    $isUrgent = true;
                 } else {
                     $status = 'Selesai (Tanpa Kabar)';
                     $badgeClass = 'bg-gray-200 text-gray-600 border-gray-300';
@@ -109,20 +112,23 @@ class MonitoringController extends Controller
                 'status' => $status,
                 'badge_class' => $badgeClass,
                 'keterangan' => $keterangan,
-                'is_urgent' => ($status === 'Terlambat'),
+                'is_urgent' => $isUrgent,
             ];
         });
 
-        // Sorting: Terlambat -> Sesi Kosong -> Lainnya
+        // Sorting
         $monitoringData = $monitoringData->sort(function ($a, $b) {
+            // Prioritas sorting: Terlambat/Sakit/Izin (Urgent) paling atas
             $priority = [
                 'Terlambat' => 1,
-                'Sesi Kosong' => 2, // Prioritas kedua untuk dicek admin
-                'Belum Masuk' => 3,
-                'Digantikan' => 4,
-                'Hadir' => 5,
-                'Menunggu' => 6,
-                'Selesai (Tanpa Kabar)' => 7
+                'Sakit' => 2,
+                'Izin' => 2,
+                'Sesi Kosong' => 3,
+                'Belum Masuk' => 4,
+                'Digantikan' => 5,
+                'Hadir' => 6,
+                'Menunggu' => 7,
+                'Selesai (Tanpa Kabar)' => 8
             ];
             
             $valA = $priority[$a->status] ?? 99;

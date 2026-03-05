@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use App\Models\Meeting;
 use App\Models\User;
+use App\Models\Holiday; // <-- Import Model Holiday
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -14,9 +15,30 @@ class MonitoringController extends Controller
     public function index(Request $request)
     {
         Carbon::setLocale('id');
-        $search = $request->input('search');
-        $todayName = Carbon::now('Asia/Jakarta')->isoFormat('dddd');
         $now = Carbon::now('Asia/Jakarta');
+        
+        // --- CEK 1: HARI LIBUR SABTU & MINGGU ---
+        if ($now->isWeekend()) {
+            return view('admin.monitoring.holiday', [
+                'reason' => 'Libur Akhir Pekan (' . $now->isoFormat('dddd') . ')',
+                'date' => $now->translatedFormat('d F Y'),
+                'icon' => 'fa-mug-hot'
+            ]);
+        }
+
+        // --- CEK 2: LIBUR NASIONAL / MANUAL DARI DB ---
+        $holiday = Holiday::whereDate('date', $now->toDateString())->first();
+        if ($holiday) {
+            return view('admin.monitoring.holiday', [
+                'reason' => $holiday->title,
+                'date' => $now->translatedFormat('d F Y'),
+                'icon' => 'fa-umbrella-beach'
+            ]);
+        }
+
+        // --- LANJUT KE LOGIC MONITORING ---
+        $search = $request->input('search');
+        $todayName = $now->isoFormat('dddd');
 
         $query = Schedule::with(['teacher', 'subject', 'classroom'])
             ->where('day', $todayName);
@@ -28,19 +50,19 @@ class MonitoringController extends Controller
             });
         }
 
-        $schedules = $query->orderBy('start_time', 'asc')->get();
+        $schedules = $query->orderBy('start_time', 'asc')->paginate(9)->withQueryString();
 
         $monitoringData = $schedules->map(function ($schedule) use ($now) {
 
-            // 1. Cek Meeting (Apakah sudah buka kelas?)
+            // Cek Meeting
             $meeting = Meeting::where('schedule_id', $schedule->id)
                 ->whereDate('date', $now->toDateString())
                 ->with('opener')
                 ->first();
 
-            // 2. Cek Izin/Sakit Guru (Apakah guru ini punya izin hari ini?)
-            $leave = \App\Models\LeaveRequest::where('student_id', $schedule->teacher_id) // Ingat: user_id guru ada di kolom student_id
-                ->where('status', 'approved') // Harus yang sudah disetujui Kepsek/Admin
+            // Cek Izin Guru
+            $leave = \App\Models\LeaveRequest::where('student_id', $schedule->teacher_id)
+                ->where('status', 'approved')
                 ->whereDate('start_date', '<=', $now->toDateString())
                 ->whereDate('end_date', '>=', $now->toDateString())
                 ->first();
@@ -49,14 +71,9 @@ class MonitoringController extends Controller
             $end   = Carbon::parse($schedule->end_time, 'Asia/Jakarta');
             $lateThreshold = $start->copy()->addMinutes(15);
 
-            // ===== LOGIKA STATUS PRIORITAS =====
-            $status = '';
-            $badgeClass = '';
-            $keterangan = '';
-            $isUrgent = false; // Trigger tombol panggil piket
+            $status = ''; $badgeClass = ''; $keterangan = ''; $isUrgent = false;
 
             if ($meeting) {
-                // KASUS A: Meeting Sudah Ada
                 $studentCount = $meeting->attendances()
                     ->whereHas('student', fn($q) => $q->where('role', 'student'))
                     ->count();
@@ -78,15 +95,12 @@ class MonitoringController extends Controller
                 }
 
             } elseif ($leave) {
-                // KASUS B: Guru Izin/Sakit (Resmi)
-                // Ini harus dianggap URGENT agar admin panggil piket
                 $status = ($leave->type == 'sick') ? 'Sakit' : 'Izin';
                 $badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
                 $keterangan = 'Guru berhalangan (' . Str::limit($leave->reason, 20) . ')';
-                $isUrgent = true; // Tetap urgent karena kelas kosong!
+                $isUrgent = true;
 
             } else {
-                // KASUS C: Tidak ada kabar
                 if ($now < $start) {
                     $status = 'Menunggu';
                     $badgeClass = 'bg-gray-100 text-gray-500 border-gray-200';
@@ -116,24 +130,10 @@ class MonitoringController extends Controller
             ];
         });
 
-        // Sorting
         $monitoringData = $monitoringData->sort(function ($a, $b) {
-            // Prioritas sorting: Terlambat/Sakit/Izin (Urgent) paling atas
-            $priority = [
-                'Terlambat' => 1,
-                'Sakit' => 2,
-                'Izin' => 2,
-                'Sesi Kosong' => 3,
-                'Belum Masuk' => 4,
-                'Digantikan' => 5,
-                'Hadir' => 6,
-                'Menunggu' => 7,
-                'Selesai (Tanpa Kabar)' => 8
-            ];
-            
+            $priority = ['Terlambat' => 1, 'Sakit' => 2, 'Izin' => 2, 'Sesi Kosong' => 3, 'Belum Masuk' => 4, 'Digantikan' => 5, 'Hadir' => 6, 'Menunggu' => 7, 'Selesai (Tanpa Kabar)' => 8];
             $valA = $priority[$a->status] ?? 99;
             $valB = $priority[$b->status] ?? 99;
-            
             return $valA <=> $valB;
         });
 
@@ -149,7 +149,6 @@ class MonitoringController extends Controller
         $schedule = Schedule::findOrFail($id);
         $schedule->request_piket = !$schedule->request_piket;
         $schedule->save();
-
         $status = $schedule->request_piket ? 'memanggil' : 'membatalkan panggilan';
         return back()->with('success', "Berhasil $status Guru Piket untuk kelas ini.");
     }

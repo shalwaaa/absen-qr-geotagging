@@ -168,8 +168,7 @@ class UserController extends Controller
             return back()->with('error', 'Tipe user tidak valid.');
         }
 
-        // Hapus semua user dengan role tersebut
-        // Hati-hati: cascade delete akan menghapus data absensi & history rombel juga
+        // Hapus semua user dengan role tersebut (akan cascade jika migration sudah diatur)
         User::where('role', $type)->delete();
 
         return back()->with('success', 'Semua data ' . ($type == 'teacher' ? 'Guru' : 'Siswa') . ' berhasil dihapus.');

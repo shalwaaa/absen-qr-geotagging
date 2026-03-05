@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\HeadmasterController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\HomeroomController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\MeetingController;
@@ -175,9 +176,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
 
     // ROUTE KHUSUS ADMIN (RESOURCES)
+    Route::delete('/classrooms/destroy-all', [ClassroomController::class, 'destroyAll'])->name('classrooms.destroyAll');
     Route::resource('classrooms', ClassroomController::class);
+
     Route::resource('subjects', SubjectController::class);
     
+    
+    Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
     Route::resource('users', UserController::class);
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
     
@@ -215,6 +220,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Route untuk delete all users (HATI-HATI)
     Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
+
+      // Route Libur
+    Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
+    Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+    
+    // Route Khusus Sync API
+    Route::post('/holidays/sync', [HolidayController::class, 'syncNational'])->name('holidays.sync');
+    Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
+
+    // Route Kalender Libur
+    Route::get('/calendar', [\App\Http\Controllers\HolidayController::class, 'calendar'])->name('calendar.index');
 
     // =================== ROUTE SINKRONISASI ===================
     Route::prefix('sync')->group(function () {

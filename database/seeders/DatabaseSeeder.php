@@ -1,6 +1,5 @@
 <?php
 
-// database/seeders/DatabaseSeeder.php
 namespace Database\Seeders;
 
 use App\Models\User;
@@ -12,39 +11,49 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Buat Kelas Contoh (Lokasi set sembarang)
-        $kelas = Classroom::create([
-            'name' => 'XII-RPL-1',
-            'latitude' => -6.200000, // Contoh koordinat Jakarta
-            'longitude' => 106.816666,
-            'radius_meters' => 100,
-        ]);
 
-        // 2.ADMIN
-        User::create([
-            'name' => 'Admin Sekolah',
-            'email' => 'admin@sekolah.id',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-        ]);
+        $kelas = Classroom::firstOrCreate(
+            ['name' => 'XII-RPL-3'], // Cek berdasarkan nama
+            [
+                'latitude' => -6.200000,
+                'longitude' => 106.816666,
+                'radius_meters' => 50,
+                'grade_level' => 12
+            ]
+        );
 
-        // 3.Akun GURU
-        User::create([
-            'name' => 'Pak Budi Guru',
-            'email' => 'guru@sekolah.id',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'nip_nis' => '19850101',
-        ]);
+        // 2. ADMIN
+        User::firstOrCreate(
+            ['email' => 'admin@sekolah.id'], // Kuncinya: Cek email ini
+            [
+                'name' => 'Admin Sekolah',
+                'password' => Hash::make('password'),
+                'role' => 'admin',
+            ]
+        );
 
-        // 4.Akun SISWA 
-        User::create([
-            'name' => 'Ani Siswa',
-            'email' => 'siswa@sekolah.id',
-            'password' => Hash::make('password'),
-            'role' => 'student',
-            'nip_nis' => '12345',
-            'classroom_id' => $kelas->id, // Masuk kelas XII-RPL-1
-        ]);
+        // 3. Akun GURU
+        User::firstOrCreate(
+            ['email' => 'guru@sekolah.id'],
+            [
+                'name' => 'Pak Budi Guru',
+                'password' => Hash::make('password'),
+                'role' => 'teacher',
+                'nip_nis' => '19850101',
+            ]
+        );
+
+        // 4. Akun SISWA
+        User::firstOrCreate(
+            ['email' => 'siswa@sekolah.id'],
+            [
+                'name' => 'Ani Siswa',
+                'password' => Hash::make('password'),
+                'role' => 'student',
+                'nip_nis' => '12345',
+                'classroom_id' => $kelas->id, 
+                'status' => 'active'
+            ]
+        );
     }
 }

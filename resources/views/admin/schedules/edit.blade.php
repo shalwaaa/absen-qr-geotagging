@@ -149,7 +149,7 @@
                         <div class="form-group">
                             <label class="form-label">Hari</label>
                             <select name="day" class="form-input">
-                                @foreach(['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'] as $day)
+                                @foreach(['Senin','Selasa','Rabu','Kamis','Jumat'] as $day)
                                     <option value="{{ $day }}" {{ $schedule->day == $day ? 'selected' : '' }}>{{ $day }}</option>
                                 @endforeach
                             </select>

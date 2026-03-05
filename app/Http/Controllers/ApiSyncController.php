@@ -289,6 +289,8 @@ class ApiSyncController extends Controller
                             'grade_level' => $gradeLevel,
                             'latitude' => -6.82681,
                             'longitude' => 107.13714,
+                            'latitude2' => -6.82616,    
+                            'longitude2' => 107.13152,    
                             'radius_meters' => 50,
                             'updated_at' => now()
                         ]

@@ -267,6 +267,9 @@
             <a href="{{ route('sync.index') }}" class="sidebar-link {{ request()->routeIs('sync.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-arrows-rotate"></i> Sinkronisasi API
             </a>
+            <a href="{{ route('holidays.index') }}" class="sidebar-link {{ request()->routeIs('holidays.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-calendar-xmark"></i> Hari Libur
+            </a>
             
             <div class="sidebar-section">Laporan</div>
             <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
@@ -312,6 +315,12 @@
                     <i class="fa-solid fa-user-tie"></i> Validasi Izin Guru
                 </a>
             @endif
+
+            <!-- Menu Kalender Libur -->
+            <div class="sidebar-section">Sistem</div>
+            <a href="{{ route('calendar.index') }}" class="sidebar-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
+                <i class="fa-regular fa-calendar-days"></i> Kalender
+            </a>
         @endif
 
         <!-- === MENU SISWA === -->
@@ -324,6 +333,12 @@
 
             <a href="{{ route('leaves.index') }}" class="sidebar-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-envelope-open-text"></i> Izin & Sakit
+            </a>
+
+            <!-- Menu Kalender Libur -->
+            <div class="sidebar-section">Sistem</div>
+            <a href="{{ route('calendar.index') }}" class="sidebar-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
+                <i class="fa-regular fa-calendar-days"></i> Kalender Libur
             </a>
         @endif
     </nav>

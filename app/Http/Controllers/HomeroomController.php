@@ -66,8 +66,9 @@ class HomeroomController extends Controller
 
                 // Cari Jadwal Pelajaran di hari tersebut untuk kelas ini
                 $schedules = Schedule::where('classroom_id', $leave->classroom_id)
-                                     ->where('day', $dayName) // "Senin" == "Senin"
-                                     ->get();
+                                     ->where('day', $dayName) 
+                                     ->paginate(10)
+                                     ->withQueryString();
 
                 // Debugging: Jika kamu mau cek apakah jadwal ketemu, bisa pakai dd($schedules);
 

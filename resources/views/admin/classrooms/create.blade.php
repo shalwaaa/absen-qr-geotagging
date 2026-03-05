@@ -37,11 +37,29 @@
             color: #3d5535; 
         }
         
-        #map { 
-            border: 1.5px solid #e2e8f0; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); 
+        /* Style untuk dua map */
+        .map-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .map-item {
+            border: 1.5px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .map-item .map-label {
+            background: #f8fafc;
+            padding: 10px 16px;
+            font-weight: 600;
+            color: #4a6741;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .map-item .map-frame {
+            height: 300px;
+            width: 100%;
         }
         
         .form-actions { 
@@ -124,11 +142,8 @@
             box-shadow: 0 0 0 4px rgba(74, 103, 65, 0.1);
         }
         
-        /* Dropdown styling */
-        .select2-container--default .select2-results > .select2-results__options {
-            max-height: 300px;
-            border-radius: 10px;
-            border: 1.5px solid #e2e8f0;
+        @media (max-width: 768px) {
+            .map-container { grid-template-columns: 1fr; }
         }
     </style>
 
@@ -149,7 +164,7 @@
                 
                 <div class="form-header">
                     <div class="form-title">Konfigurasi Kelas & Lokasi</div>
-                    <div class="form-subtitle">Atur identitas kelas, wali kelas, dan titik lokasi presensi siswa.</div>
+                    <div class="form-subtitle">Atur identitas kelas, wali kelas, dan dua titik lokasi presensi siswa (keduanya dengan radius sama).</div>
                 </div>
 
                 <form action="{{ route('classrooms.store') }}" method="POST">
@@ -184,24 +199,40 @@
 
                         <!-- Radius -->
                         <div class="form-group">
-                            <label class="form-label">Radius Absen (Meter)</label>
+                            <label class="form-label">Radius Absen (Meter) - Berlaku untuk kedua lokasi</label>
                             <input type="number" name="radius_meters" value="50" class="form-input" required>
                         </div>
 
-                        <!-- MAP -->
+                        <!-- MAP UNTUK DUA LOKASI -->
                         <div class="form-group">
-                            <label class="form-label">Tentukan Titik Presensi</label>
+                            <label class="form-label">Tentukan Dua Titik Presensi</label>
                             <div class="info-box">
                                 <div style="display: flex; gap: 10px; align-items: start;">
                                     <i class="fa-solid fa-lightbulb" style="margin-top: 3px;"></i>
-                                    <span><strong>Tips:</strong> Geser pin biru ke lokasi kelas/sekolah.</span>
+                                    <span><strong>Tips:</strong> Geser pin biru di masing-masing peta untuk menandai dua lokasi berbeda. Keduanya akan memiliki radius yang sama.</span>
                                 </div>
                             </div>
-                            <div id="map" style="height: 450px; width: 100%; z-index: 1;"></div>
+                            
+                            <!-- Container untuk dua map -->
+                            <div class="map-container">
+                                <!-- Map 1: Lokasi Utama -->
+                                <div class="map-item">
+                                    <div class="map-label">Lokasi Utama</div>
+                                    <div id="map1" class="map-frame"></div>
+                                </div>
+                                <!-- Map 2: Lokasi Alternatif -->
+                                <div class="map-item">
+                                    <div class="map-label">Lokasi Alternatif</div>
+                                    <div id="map2" class="map-frame"></div>
+                                </div>
+                            </div>
                         </div>
 
+                        <!-- Hidden inputs untuk menyimpan koordinat kedua lokasi -->
                         <input type="hidden" name="latitude" id="latitude">
                         <input type="hidden" name="longitude" id="longitude">
+                        <input type="hidden" name="latitude2" id="latitude2">
+                        <input type="hidden" name="longitude2" id="longitude2">
 
                         <div class="form-actions">
                             <a href="{{ route('classrooms.index') }}" class="btn-cancel">
@@ -226,60 +257,61 @@
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     
     <script>
-        // Inisialisasi Select2 untuk dropdown wali kelas
+        // Inisialisasi Select2
         $(document).ready(function() {
             $('#teacher-select').select2({
                 width: '100%',
                 placeholder: 'Cari Nama Wali Kelas...',
-                allowClear: true,
-                minimumInputLength: 0,
-                language: {
-                    noResults: function() {
-                        return "Tidak ditemukan";
-                    },
-                    searching: function() {
-                        return "Mencari...";
-                    }
-                }
+                allowClear: true
             });
         });
         
-        // Script Map (tetap sama seperti sebelumnya)
-        var map = L.map('map').setView([-6.1753924, 106.8271528], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-            attribution: '&copy; OpenStreetMap' 
-        }).addTo(map);
+        // --- MAP 1 (UTAMA) ---
+        var map1 = L.map('map1').setView([-6.82681, 107.13714], 16); // Default Cianjur
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map1);
+        var marker1 = L.marker([-6.82681, 107.13714], { draggable: true }).addTo(map1);
+
+        // --- MAP 2 (ALTERNATIF) ---
+        var map2 = L.map('map2').setView([-6.82616, 107.13152], 16); // Default Cianjur
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map2);
         
-        var marker = L.marker([-6.1753924, 106.8271528], { 
-            draggable: true 
-        }).addTo(map);
-
-        function updateInputs(lat, lng) {
-            document.getElementById('latitude').value = lat;
-            document.getElementById('longitude').value = lng;
-        }
-        updateInputs(-6.1753924, 106.8271528);
-
-        // Tambahkan geocoder untuk pencarian lokasi
-        L.Control.geocoder({ 
-            defaultMarkGeocode: false 
-        })
-        .on('markgeocode', function(e) {
-            var center = e.geocode.center;
-            marker.setLatLng(center);
-            map.fitBounds(e.geocode.bbox);
-            updateInputs(center.lat, center.lng);
-        })
-        .addTo(map);
-
-        marker.on('dragend', function(e) {
-            var position = marker.getLatLng();
-            updateInputs(position.lat, position.lng);
+        // Gunakan Icon Merah untuk Lokasi 2
+        var redIcon = new L.Icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
         });
         
-        map.on('click', function(e) {
-            marker.setLatLng(e.latlng);
-            updateInputs(e.latlng.lat, e.latlng.lng);
+        var marker2 = L.marker([-6.82616, 107.13152], { draggable: true, icon: redIcon }).addTo(map2);
+
+        // --- FUNGSI UPDATE INPUTS ---
+        function updateInputs() {
+            var pos1 = marker1.getLatLng();
+            document.getElementById('latitude').value = pos1.lat;
+            document.getElementById('longitude').value = pos1.lng;
+            
+            var pos2 = marker2.getLatLng();
+            document.getElementById('latitude2').value = pos2.lat;
+            document.getElementById('longitude2').value = pos2.lng;
+        }
+
+        // Set nilai awal
+        updateInputs();
+
+        // Event Listeners
+        marker1.on('dragend', updateInputs);
+        map1.on('click', function(e) {
+            marker1.setLatLng(e.latlng);
+            updateInputs();
+        });
+
+        marker2.on('dragend', updateInputs);
+        map2.on('click', function(e) {
+            marker2.setLatLng(e.latlng);
+            updateInputs();
         });
     </script>
 </x-app-layout>

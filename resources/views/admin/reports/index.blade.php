@@ -1,5 +1,11 @@
 <x-app-layout>
-    <x-slot name="header"></x-slot>
+        <x-slot name="header">
+        <div class="flex items-center justify-between header-section">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                <span style="color: #E4EB9C; font-weight: 800;">Laporan & Rekapitulasi</span>
+            </h2>
+        </div>
+    </x-slot>
 
     <style>
         :root { --dark-green: #142C14; --cal-poly: #2D5128; --fern: #537B2F; }

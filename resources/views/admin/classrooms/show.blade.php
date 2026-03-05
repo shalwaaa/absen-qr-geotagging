@@ -23,6 +23,66 @@
 
         .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #64748b; font-weight: 600; text-decoration: none; transition: 0.2s; }
         .back-btn:hover { color: #4a6741; transform: translateX(-3px); }
+
+        /* Lokasi badge */
+        .location-badge {
+            background: #f0f7ed;
+            border-left: 4px solid #4a6741;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-top: 8px;
+            font-size: 13px;
+            color: #2d4a2d;
+            display: flex; align-items: center; gap: 8px;
+        }
+
+        /* Container untuk dua peta */
+        .maps-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 10px;
+            height: 100%;
+            min-height: 400px;
+        }
+        .map-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+        }
+        .map-header {
+            background: #f8fafc;
+            padding: 10px 12px;
+            font-weight: 600;
+            font-size: 13px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .map-frame {
+            flex: 1;
+            min-height: 300px;
+            width: 100%;
+        }
+        .map-placeholder {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            background: #f8fafc;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 20px;
+            text-align: center;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .maps-container { grid-template-columns: 1fr; }
+        }
     </style>
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -30,11 +90,8 @@
     <x-slot name="header">
         <div class="flex justify-between items-center animate-fade-in">
             <h2 class="font-bold text-xl text-gray-800 leading-tight">
-                <span style="color: #E4EB9C;">Detail Kelas:</span> {{ $classroom->name }}
+                <span style="color: #E4EB9C;">Detail Kelas: {{ $classroom->name }}</span>
             </h2>
-            <a href="{{ route('classrooms.index') }}" class="back-btn">
-                <i class="fa-solid fa-arrow-left"></i> Kembali
-            </a>
         </div>
     </x-slot>
 
@@ -78,6 +135,26 @@
                                 <div class="info-label">Radius Absensi</div>
                                 <div class="info-value">{{ $classroom->radius_meters }} Meter</div>
                             </div>
+
+                            <!-- Lokasi Utama -->
+                            <div class="info-group">
+                                <div class="info-label">Lokasi Utama</div>
+                                <div class="location-badge">
+                                    <i class="fa-solid fa-location-dot" style="color: #2D5128;"></i>
+                                    <span>{{ number_format($classroom->latitude, 6) }}, {{ number_format($classroom->longitude, 6) }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Lokasi Alternatif (jika ada) -->
+                            @if($classroom->latitude2 && $classroom->longitude2)
+                                <div class="info-group">
+                                    <div class="info-label">Lokasi Alternatif</div>
+                                    <div class="location-badge" style="border-left-color: #d97706; background: #fffbeb; color: #92400e;">
+                                        <i class="fa-solid fa-location-dot" style="color: #d97706;"></i>
+                                        <span>{{ number_format($classroom->latitude2, 6) }}, {{ number_format($classroom->longitude2, 6) }}</span>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
 
                         <div class="pt-4 border-t mt-4">
@@ -88,13 +165,31 @@
                     </div>
                 </div>
 
-                <!-- KOLOM 2: PETA LOKASI -->
+                <!-- KOLOM 2: DUA PETA LOKASI -->
                 <div class="lg:col-span-2">
                     <div class="info-card p-0 overflow-hidden relative">
                         <div class="absolute top-4 left-4 z-[400] bg-white px-3 py-1 rounded-md shadow-md border border-gray-200 text-xs font-bold text-gray-600">
-                            <i class="fa-solid fa-map-location-dot mr-1"></i> Titik Lokasi Sekolah
+                            <i class="fa-solid fa-map-location-dot mr-1"></i> Peta Lokasi
                         </div>
-                        <div id="map" style="height: 100%; min-height: 400px; width: 100%;"></div>
+                        
+                        <!-- Container dua peta -->
+                        <div class="maps-container">
+                            <!-- Peta 1: Lokasi Utama -->
+                            <div class="map-item">
+                                <div class="map-header" style="color: #2D5128;">
+                                    <i class="fa-solid fa-location-dot"></i> Lokasi Utama
+                                </div>
+                                <div id="map1" class="map-frame"></div>
+                            </div>
+                            
+                            <!-- Peta 2: Lokasi Alternatif -->
+                            <div class="map-item">
+                                <div class="map-header" style="color: #d97706;">
+                                    <i class="fa-solid fa-location-dot"></i> Lokasi Alternatif
+                                </div>
+                                <div id="map2" class="map-frame"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -173,30 +268,75 @@
     </div>
 
     <!-- Script Peta -->
+    <!-- Script Peta -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         var lat = {{ $classroom->latitude }};
         var lng = {{ $classroom->longitude }};
-        var radius = {{ $classroom->radius_meters }};
-
-        var map = L.map('map', {
-            center: [lat, lng],
-            zoom: 17,
-            dragging: false,
-            scrollWheelZoom: false,
-            zoomControl: true 
-        });
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map);
-
-        L.marker([lat, lng]).addTo(map)
-            .bindPopup("<b>Titik Pusat Kelas</b>").openPopup();
         
-        L.circle([lat, lng], {
-            color: '#4a6741',
-            fillColor: '#4a6741',
-            fillOpacity: 0.15,
+        // Pastikan nilai float, bukan string kosong
+        var lat2 = {{ $classroom->latitude2 ?? 'null' }};
+        var lng2 = {{ $classroom->longitude2 ?? 'null' }};
+        
+        // Default radius 50m jika kosong
+        var radius = {{ $classroom->radius_meters ?? 50 }};
+
+        // --- MAP 1 (UTAMA) ---
+        var map1 = L.map('map1').setView([lat, lng], 18); // Zoom 18 biar radius kelihatan
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map1);
+        
+        var marker1 = L.marker([lat, lng]).addTo(map1)
+            .bindPopup("<b>Lokasi Utama</b><br>" + lat.toFixed(6) + ", " + lng.toFixed(6)).openPopup();
+        
+        var circle1 = L.circle([lat, lng], {
+            color: '#2D5128',
+            fillColor: '#2D5128',
+            fillOpacity: 0.2,
             radius: radius
-        }).addTo(map);
+        }).addTo(map1).bindPopup("Radius Absen: " + radius + " meter");
+        
+        // Fit Bounds agar lingkaran terlihat full
+        map1.fitBounds(circle1.getBounds());
+
+        // --- MAP 2 (ALTERNATIF) ---
+        var map2El = document.getElementById('map2');
+        
+        if (lat2 !== null && lng2 !== null) {
+            var map2 = L.map('map2').setView([lat2, lng2], 18);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap' }).addTo(map2);
+            
+            var redIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            var marker2 = L.marker([lat2, lng2], {icon: redIcon}).addTo(map2)
+                .bindPopup("<b>Lokasi Alternatif</b><br>" + lat2.toFixed(6) + ", " + lng2.toFixed(6)).openPopup();
+            
+            var circle2 = L.circle([lat2, lng2], {
+                color: '#d97706',
+                fillColor: '#d97706',
+                fillOpacity: 0.2,
+                radius: radius
+            }).addTo(map2).bindPopup("Radius Absen: " + radius + " meter");
+
+            // Fit Bounds agar lingkaran kedua juga terlihat full
+            map2.fitBounds(circle2.getBounds());
+
+        } else {
+            // Placeholder
+            map2El.innerHTML = `
+                <div class="map-placeholder">
+                    <i class="fa-solid fa-map-location-dot text-4xl text-gray-300"></i>
+                    <p>Lokasi alternatif belum diatur.</p>
+                </div>
+            `;
+            map2El.classList.remove('map-frame');
+            map2El.style.height = '100%';
+        }
     </script>
 </x-app-layout>

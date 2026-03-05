@@ -43,7 +43,7 @@
         .schedule-card {
             background: white;
             border: 1px solid #f0fdf4;
-            border-bottom: 4px solid var(--mindaro); /* Aksen bawah khas Admin */
+            border-bottom: 4px solid var(--mindaro);
             border-radius: 20px;
             padding: 24px;
             transition: all 0.3s ease;
@@ -93,27 +93,68 @@
             background-color: var(--cal-poly);
             transform: translateY(-2px);
         }
+
+        /* PAGINATION MINI - HEMAT TEMPAT */
+        .pagination-mini {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 32px;
+            flex-wrap: wrap;
+        }
+        .pagination-mini .page-link {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            color: #64748b;
+            font-weight: 600;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .pagination-mini .page-link:hover {
+            background: #f8fafc;
+            border-color: var(--cal-poly);
+            color: var(--cal-poly);
+            transform: translateY(-1px);
+        }
+        .pagination-mini .page-link.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+        }
+        .pagination-mini .page-info {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #64748b;
+            padding: 0 8px;
+        }
+        @media (max-width: 480px) {
+            .pagination-mini .page-info {
+                font-size: 0.8rem;
+            }
+        }
     </style>
 
-        <x-slot name="header">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                <br>
-                <span style="color: var(--p-light); font-weight: 800;">Dashboard Guru</span>
-            </h2>
-        </x-slot>
+    <x-slot name="header">
+        <h1 class="text-3xl font-black text-white mb-1" style="color: #E4EB9C">Jadwal Hari Ini</h1>
+            <p class="text-white/80 text-sm italic font-medium" style="color: #E4EB9C">
+                <i class="fa-solid fa-calendar-day mr-1"></i> {{ $today }}
+            </p>
+    </x-slot>
 
     <div class="py-8 px-4 sm:px-6 lg:px-8 bg-[#FDFDF9] min-h-screen">
         <div class="max-w-7xl mx-auto space-y-8">
             
-            <div class="welcome-banner px-8 py-6 animate-up">
-                <div class="relative z-10">
-                    <p class="text-[var(--mindaro)] text-xs font-bold uppercase tracking-[0.2em] mb-1">Agenda Mengajar</p>
-                    <h1 class="text-3xl font-black text-white mb-1">Jadwal Hari Ini</h1>
-                    <p class="text-white/80 text-sm italic font-medium">
-                        <i class="fa-solid fa-calendar-day mr-1"></i> {{ $today }}
-                    </p>
-                </div>
-            </div>
+            
 
             @if($schedules->isEmpty())
                 <div class="bg-white rounded-3xl p-12 text-center shadow-sm border border-gray-100 animate-up">
@@ -146,25 +187,57 @@
                                 </p>
                             </div>
 
-                           <div class="mt-4">
-    @if($s->today_meeting)
-        <a href="{{ route('meetings.show', $s->today_meeting->id) }}" 
-           class="btn-continue w-full flex justify-center items-center text-white font-extrabold py-3 px-4 rounded-xl text-sm uppercase tracking-wide">
-            Lanjutkan Sesi Absen <i class="fa-solid fa-arrow-right ml-2"></i>
-        </a>
-    @else
-        <form action="{{ route('meetings.store') }}" method="POST">
-            @csrf
-            <input type="hidden" name="schedule_id" value="{{ $s->id }}">
-            <button type="submit" class="btn-open w-full text-white font-extrabold py-3 px-4 rounded-xl text-sm uppercase tracking-wide flex items-center justify-center gap-2">
-                <i class="fa-solid fa-qrcode"></i> Buka Kelas (QR)
-            </button>
-        </form>
-    @endif
-</div>
+                            <div class="mt-4">
+                                @if($s->today_meeting)
+                                    <a href="{{ route('meetings.show', $s->today_meeting->id) }}" 
+                                       class="btn-continue w-full flex justify-center items-center text-white font-extrabold py-3 px-4 rounded-xl text-sm uppercase tracking-wide">
+                                        Lanjutkan Sesi Absen <i class="fa-solid fa-arrow-right ml-2"></i>
+                                    </a>
+                                @else
+                                    <form action="{{ route('meetings.store') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="schedule_id" value="{{ $s->id }}">
+                                        <button type="submit" class="btn-open w-full text-white font-extrabold py-3 px-4 rounded-xl text-sm uppercase tracking-wide flex items-center justify-center gap-2">
+                                            <i class="fa-solid fa-qrcode"></i> Buka Kelas (QR)
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>
+
+                <!-- PAGINATION MINI (HEMAT TEMPAT) -->
+                @if($schedules->hasPages())
+                    <div class="pagination-mini">
+                        {{-- Previous Page Link --}}
+                        @if($schedules->onFirstPage())
+                            <span class="page-link disabled">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </span>
+                        @else
+                            <a href="{{ $schedules->previousPageUrl() }}" class="page-link">
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </a>
+                        @endif
+
+                        {{-- Page Info --}}
+                        <span class="page-info">
+                            Halaman {{ $schedules->currentPage() }} / {{ $schedules->lastPage() }}
+                        </span>
+
+                        {{-- Next Page Link --}}
+                        @if($schedules->hasMorePages())
+                            <a href="{{ $schedules->nextPageUrl() }}" class="page-link">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </a>
+                        @else
+                            <span class="page-link disabled">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </span>
+                        @endif
+                    </div>
+                @endif
             @endif
 
         </div>

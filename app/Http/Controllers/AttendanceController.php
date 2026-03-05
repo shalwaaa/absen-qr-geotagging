@@ -54,12 +54,11 @@ class AttendanceController extends Controller
             }
 
             // ========================================================
-            // [BARU] VALIDASI KELAS SISWA (Anti Salah Masuk Kelas)
+            // VALIDASI KELAS SISWA (Anti Salah Masuk Kelas)
             // ========================================================
             $studentClassId = Auth::user()->classroom_id;
             $meetingClassId = $meeting->schedule->classroom_id;
 
-            // 1. Cek apakah siswa punya kelas?
             if (!$studentClassId) {
                 return response()->json([
                     'status' => 'error',
@@ -67,17 +66,13 @@ class AttendanceController extends Controller
                 ], 403);
             }
 
-            // 2. Cek apakah kelas siswa SAMA dengan kelas jadwal?
             if ($studentClassId != $meetingClassId) {
                 $studentClassName = Auth::user()->classroom->name ?? '-';
-                // Pesan Error Detail
                 return response()->json([
                     'status' => 'error',
                     'message' => "Anda siswa kelas $studentClassName. Tidak bisa absen di kelas ini."
                 ], 403);
             }
-            // ========================================================
-
 
             // Validasi Double Absen
             $alreadyPresent = Attendance::where('meeting_id', $meeting->id)
@@ -87,24 +82,37 @@ class AttendanceController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Anda sudah absen di sesi ini!'], 400);
             }
 
-            // Validasi Jarak (Geofencing)
-            $schoolLat = $meeting->schedule->classroom->latitude;
-            $schoolLng = $meeting->schedule->classroom->longitude;
-            $radiusAllowed = $meeting->schedule->classroom->radius_meters;
+            // ========================================================
+            // VALIDASI JARAK (DOUBLE LOCATION)
+            // ========================================================
+            $classroom = $meeting->schedule->classroom;
+            $radiusAllowed = $classroom->radius_meters;
 
-            $distance = $this->calculateDistance(
+            // Hitung Jarak 1
+            $distance1 = $this->calculateDistance(
                 $request->latitude, 
                 $request->longitude, 
-                $schoolLat, 
-                $schoolLng
+                $classroom->latitude, 
+                $classroom->longitude
             );
 
-            Log::info("Absen Siswa: " . Auth::user()->name . " | Jarak: " . $distance . "m");
+            // Hitung Jarak 2 (Jika ada)
+            $distance2 = $classroom->latitude2 ? $this->calculateDistance(
+                $request->latitude, 
+                $request->longitude, 
+                $classroom->latitude2, 
+                $classroom->longitude2
+            ) : 999999; // Angka besar jika tidak ada lokasi 2
 
-            if ($distance > $radiusAllowed) {
+            // Ambil jarak terdekat
+            $minDistance = min($distance1, $distance2);
+
+            Log::info("Absen Siswa: " . Auth::user()->name . " | Jarak 1: $distance1 | Jarak 2: $distance2 | Final: $minDistance");
+
+            if ($minDistance > $radiusAllowed) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'Jarak terlalu jauh! Anda berjarak ' . round($distance) . 'm. (Maks: ' . $radiusAllowed . 'm)'
+                    'message' => 'Jarak terlalu jauh! Anda berjarak ' . round($minDistance) . 'm dari lokasi terdekat. (Maks: ' . $radiusAllowed . 'm)'
                 ], 400);
             }
 
@@ -115,16 +123,16 @@ class AttendanceController extends Controller
                 'status' => 'present',
                 'latitude_student' => $request->latitude,
                 'longitude_student' => $request->longitude,
-                'distance_meters' => $distance,
+                'distance_meters' => $minDistance, // <--- PERBAIKAN: Gunakan $minDistance
+                'scan_time' => now(),
             ]);
 
             return response()->json([
                 'status' => 'success',
-                'message' => 'Berhasil! Jarak: ' . round($distance) . 'm'
+                'message' => 'Berhasil! Jarak: ' . round($minDistance) . 'm' // <--- PERBAIKAN: Gunakan $minDistance
             ]);
 
         } catch (\Exception $e) {
-            // Tangkap Error Server
             Log::error("Error Absensi: " . $e->getMessage());
             return response()->json([
                 'status' => 'error',

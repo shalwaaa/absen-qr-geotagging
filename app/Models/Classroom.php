@@ -10,8 +10,10 @@ class Classroom extends Model
     protected $fillable = [
     'name', 
     'latitude', 
-    'longitude', 
-    'radius_meters',
+    'longitude',
+    'latitude2',
+    'longitude2',
+    'radius_meters', 
     'grade_level',         
     'homeroom_teacher_id' 
     ];

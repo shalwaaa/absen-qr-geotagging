@@ -26,7 +26,7 @@ class SubjectController extends Controller
 
             $subjects = $query->orderBy('grade_level', 'asc')
                             ->orderBy('name', 'asc')
-                            ->paginate(10)
+                            ->paginate(2)
                             ->withQueryString();
 
             return view('admin.subjects.index', compact('subjects', 'grade', 'search'));

@@ -106,18 +106,7 @@
     <div class="py-8 px-4 sm:px-6 lg:px-8 bg-[#FDFDF9] min-h-screen">
         <div class="max-w-6xl mx-auto">
             
-            <!-- Banner Kepala Sekolah -->
-            <div class="welcome-banner">
-                <div>
-                    <p class="text-[var(--mindaro)] text-xs font-bold uppercase tracking-widest mb-1">Area Kepala Sekolah</p>
-                    <h1 class="text-2xl font-black">Validasi Izin Guru</h1>
-                    <p class="text-white/80 text-sm mt-1">Kelola permohonan izin dan sakit dari tenaga pengajar.</p>
-                </div>
-                <div class="text-right hidden md:block">
-                    <div class="text-4xl font-black text-white">{{ $pendingLeaves->count() }}</div>
-                    <div class="text-xs text-white/70 font-bold uppercase">Menunggu</div>
-                </div>
-            </div>
+            
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 

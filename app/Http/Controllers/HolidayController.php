@@ -56,9 +56,20 @@ class HolidayController extends Controller
     }
 
     // 3. Hapus Libur
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
-        Holiday::findOrFail($id)->delete();
+        $holiday = Holiday::findOrFail($id);
+        $holiday->delete();
+
+        // LOGIKA BARU: Cek apakah request dari AJAX/Fetch?
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Data berhasil dihapus.'
+            ]);
+        }
+
+        // Kalau request biasa (non-ajax), pakai cara lama
         return back()->with('success', 'Hari libur dihapus.');
     }
 

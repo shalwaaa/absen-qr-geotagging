@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Schedule;
 use App\Models\Meeting;
 use App\Models\User;
-use App\Models\Holiday; // <-- Import Model Holiday
+use App\Models\Holiday;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +17,7 @@ class MonitoringController extends Controller
         Carbon::setLocale('id');
         $now = Carbon::now('Asia/Jakarta');
         
-        // --- CEK 1: HARI LIBUR SABTU & MINGGU ---
+        // 1. CEK WEEKEND (SABTU & MINGGU)
         if ($now->isWeekend()) {
             return view('admin.monitoring.holiday', [
                 'reason' => 'Libur Akhir Pekan (' . $now->isoFormat('dddd') . ')',
@@ -26,7 +26,7 @@ class MonitoringController extends Controller
             ]);
         }
 
-        // --- CEK 2: LIBUR NASIONAL / MANUAL DARI DB ---
+        // 2. CEK LIBUR NASIONAL / MANUAL
         $holiday = Holiday::whereDate('date', $now->toDateString())->first();
         if ($holiday) {
             return view('admin.monitoring.holiday', [
@@ -36,7 +36,6 @@ class MonitoringController extends Controller
             ]);
         }
 
-        // --- LANJUT KE LOGIC MONITORING ---
         $search = $request->input('search');
         $todayName = $now->isoFormat('dddd');
 
@@ -50,10 +49,11 @@ class MonitoringController extends Controller
             });
         }
 
-        $schedules = $query->orderBy('start_time', 'asc')->paginate(9)->withQueryString();
+        // Ambil data jadwal, urutkan berdasarkan jam mulai
+        $schedules = $query->orderBy('start_time', 'asc')->get();
 
         $monitoringData = $schedules->map(function ($schedule) use ($now) {
-
+            
             // Cek Meeting
             $meeting = Meeting::where('schedule_id', $schedule->id)
                 ->whereDate('date', $now->toDateString())
@@ -92,13 +92,14 @@ class MonitoringController extends Controller
                     $status = 'Sesi Kosong';
                     $badgeClass = 'bg-orange-100 text-orange-700 border-orange-200 animate-pulse';
                     $keterangan = 'Sesi dibuka, belum ada siswa';
+                    $isUrgent = true; // Urgent cek kenapa kosong
                 }
 
             } elseif ($leave) {
                 $status = ($leave->type == 'sick') ? 'Sakit' : 'Izin';
                 $badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
                 $keterangan = 'Guru berhalangan (' . Str::limit($leave->reason, 20) . ')';
-                $isUrgent = true;
+                $isUrgent = true; // Perlu piket
 
             } else {
                 if ($now < $start) {
@@ -130,10 +131,36 @@ class MonitoringController extends Controller
             ];
         });
 
+        // ===== LOGIKA PENGURUTAN BARU (SORTING) =====
         $monitoringData = $monitoringData->sort(function ($a, $b) {
-            $priority = ['Terlambat' => 1, 'Sakit' => 2, 'Izin' => 2, 'Sesi Kosong' => 3, 'Belum Masuk' => 4, 'Digantikan' => 5, 'Hadir' => 6, 'Menunggu' => 7, 'Selesai (Tanpa Kabar)' => 8];
+            // Angka lebih KECIL = Posisi lebih ATAS
+            // Angka lebih BESAR = Posisi lebih BAWAH
+            
+            $priority = [
+                // TIER 1: BAHAYA / BUTUH TINDAKAN (Paling Atas)
+                'Terlambat' => 1,
+                'Sesi Kosong' => 2,
+                
+                // TIER 2: PERLU PERHATIAN / AKAN DATANG
+                'Belum Masuk' => 3, // Sudah jamnya tapi belum lewat 15 menit
+                'Sakit' => 4,       // Perlu piket
+                'Izin' => 4,        // Perlu piket
+                'Menunggu' => 5,    // Jadwal nanti siang
+
+                // TIER 3: SELESAI / AMAN (Paling Bawah)
+                'Digantikan' => 8,
+                'Hadir' => 9,
+                'Selesai (Tanpa Kabar)' => 10
+            ];
+            
             $valA = $priority[$a->status] ?? 99;
             $valB = $priority[$b->status] ?? 99;
+            
+            // Jika prioritas sama, urutkan berdasarkan waktu mulai (biar urut jamnya)
+            if ($valA === $valB) {
+                return $a->schedule->start_time <=> $b->schedule->start_time;
+            }
+            
             return $valA <=> $valB;
         });
 

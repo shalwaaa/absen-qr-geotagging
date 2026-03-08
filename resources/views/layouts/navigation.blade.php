@@ -224,13 +224,15 @@
 
 <nav class="sidebar-menu">
         <!-- === MENU UMUM === -->
-        <div class="sidebar-section">Utama</div>
+
+
+        <!-- === MENU ADMIN === -->
+        
+        @if(Auth::user()->role === 'admin')
+                <div class="sidebar-section">Utama</div>
         <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
             <i class="fa-solid fa-house"></i> Dashboard
         </a>
-
-        <!-- === MENU ADMIN === -->
-        @if(Auth::user()->role === 'admin')
             <div class="sidebar-section">Manajemen</div>
             
             <a href="{{ route('users.index', ['type' => 'teacher']) }}" class="sidebar-link {{ request()->fullUrlIs(route('users.index', ['type'=>'teacher']).'*') ? 'active' : '' }}">

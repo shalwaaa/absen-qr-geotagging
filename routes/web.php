@@ -187,6 +187,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
     
     Route::resource('schedules', ScheduleController::class);
+    Route::get('schedules/classroom/{classroom}', [ScheduleController::class, 'classroomShow'])->name('schedules.classroom.show');
 
     Route::resource('leaves', LeaveRequestController::class);
 

@@ -759,31 +759,19 @@
                     var props = event.extendedProps;
                     
                     var tanggal = event.start.toLocaleDateString('id-ID', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' 
                     });
                     
                     var typeText = props.type === 'manual' ? 'Libur Sekolah (Manual)' : 'Libur Nasional';
-                    var eventId = event.id; // ID event harus ada di data
+                    var eventId = event.id;
 
                     Swal.fire({
                         title: event.title,
                         html: `
                             <div class="text-left mt-4">
-                                <p class="mb-3">
-                                    <span class="font-bold text-gray-500">Tanggal:</span><br>
-                                    <span class="text-gray-700">${tanggal}</span>
-                                </p>
-                                <p class="mb-3">
-                                    <span class="font-bold text-gray-500">Tipe:</span><br>
-                                    <span class="badge-type ${props.type === 'manual' ? 'badge-manual' : 'badge-national'}">${typeText}</span>
-                                </p>
-                                <p>
-                                    <span class="font-bold text-gray-500">Keterangan:</span><br>
-                                    <span class="text-gray-700">${props.description || '-'}</span>
-                                </p>
+                                <p class="mb-3"><span class="font-bold text-gray-500">Tanggal:</span><br> <span class="text-gray-700">${tanggal}</span></p>
+                                <p class="mb-3"><span class="font-bold text-gray-500">Tipe:</span><br> <span class="badge-type ${props.type === 'manual' ? 'badge-manual' : 'badge-national'}">${typeText}</span></p>
+                                <p><span class="font-bold text-gray-500">Keterangan:</span><br> <span class="text-gray-700">${props.description || '-'}</span></p>
                             </div>
                         `,
                         icon: 'info',
@@ -794,18 +782,20 @@
                         cancelButtonText: 'Tutup',
                         reverseButtons: true,
                         showLoaderOnConfirm: true,
+                        
+                        // --- PROSES HAPUS ---
                         preConfirm: () => {
                             return fetch(`/holidays/${eventId}`, {
                                 method: 'DELETE',
                                 headers: {
                                     'X-CSRF-TOKEN': '{{ csrf_token() }}',
                                     'Content-Type': 'application/json',
-                                    'Accept': 'application/json',
+                                    'Accept': 'application/json', // Minta balasan JSON
                                 },
                             })
                             .then(response => {
                                 if (!response.ok) {
-                                    throw new Error('Gagal menghapus data');
+                                    throw new Error(response.statusText);
                                 }
                                 return response.json();
                             })
@@ -817,18 +807,22 @@
                                 }
                             })
                             .catch(error => {
-                                Swal.showValidationMessage(`Request failed: ${error}`);
+                                Swal.showValidationMessage(`Gagal: ${error}`);
                             });
                         }
                     }).then((result) => {
+                        // --- JIKA SUKSES ---
                         if (result.isConfirmed) {
                             Swal.fire({
                                 title: 'Terhapus!',
-                                text: result.value.message || 'Libur berhasil dihapus.',
+                                text: 'Data libur telah dihapus.',
                                 icon: 'success',
-                                confirmButtonColor: '#2D5128'
+                                confirmButtonColor: '#2D5128',
+                                timer: 1500, // Otomatis tutup dalam 1.5 detik
+                                showConfirmButton: false
                             }).then(() => {
-                                location.reload();
+                                // REFRESH HALAMAN DISINI
+                                location.reload(); 
                             });
                         }
                     });

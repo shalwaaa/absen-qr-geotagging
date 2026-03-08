@@ -84,17 +84,7 @@
     <div class="py-8 px-4 sm:px-6 lg:px-8 bg-[#FDFDF9] min-h-screen">
         <div class="max-w-6xl mx-auto">
             
-            <!-- Banner Wali Kelas -->
-            <div class="welcome-banner">
-                <div>
-                    <h1 class="text-2xl font-black">Kelas {{ $classroom->name }}</h1>
-                    <p class="text-white/80 text-sm mt-1">Kelola perizinan siswa Anda di sini.</p>
-                </div>
-                <div class="text-right hidden md:block">
-                    <div class="text-4xl font-black text-white">{{ $pendingLeaves->count() }}</div>
-                    <div class="text-xs text-white/70 font-bold uppercase">Permintaan Baru</div>
-                </div>
-            </div>
+           
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 

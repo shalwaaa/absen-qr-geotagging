@@ -12,39 +12,40 @@ class ScheduleController extends Controller
 {
     public function index(Request $request)
     {
-        $grade = $request->query('grade');
-        $day = $request->query('day'); // <-- Filter Hari
-        $search = $request->query('search');
+        $query = Classroom::query();
 
-        $query = \App\Models\Schedule::with(['teacher', 'subject', 'classroom']);
-
-        // Filter Tingkat Kelas
-        if ($grade) {
-            $query->whereHas('classroom', function($q) use ($grade) {
-                $q->where('grade_level', $grade);
-            });
+        if ($request->filled('grade')) {
+            $query->where('grade_level', $request->grade);
         }
 
-        // Filter Hari (BARU)
-        if ($day) {
-            $query->where('day', $day);
+        if ($request->filled('search')) {
+            $query->where('name', 'like', '%' . $request->search . '%');
         }
 
-        // Filter Search
-        if ($search) {
-            $query->where(function($q) use ($search) {
-                $q->whereHas('teacher', fn($t) => $t->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('subject', fn($s) => $s->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('classroom', fn($c) => $c->where('name', 'like', "%{$search}%"));
-            });
+        $classrooms = $query->paginate(10);
+
+        return view('admin.schedules.index', [
+            'classrooms' => $classrooms,
+            'grade' => $request->grade,
+            'search' => $request->search,
+        ]);
+    }
+
+    public function classroomShow(Classroom $classroom, Request $request)
+    {
+        $query = $classroom->schedules()->with(['subject', 'teacher']);
+
+        if ($request->filled('day')) {
+            $query->where('day', $request->day);
         }
 
-        $schedules = $query->orderByRaw("FIELD(day, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu')")
-                           ->orderBy('start_time')
-                           ->paginate(10)
-                           ->withQueryString();
+        $schedules = $query->get(); // atau paginate jika perlu
 
-        return view('admin.schedules.index', compact('schedules', 'grade', 'day', 'search'));
+        return view('admin.schedules.show', [
+            'classroom' => $classroom,
+            'schedules' => $schedules,
+            'day' => $request->day,
+        ]);
     }
 
     public function create()

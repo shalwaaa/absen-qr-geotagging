@@ -108,7 +108,65 @@
         .btn-delete { color: #dc2626; } .btn-delete:hover { background: #fee2e2; border-color: #fca5a5; }
 
         /* Pagination */
-        .pagination-wrapper { padding: 16px; border-top: 1px solid #f1f5f9; }
+        /* 7. PAGINATION CUSTOM STYLE */
+        .custom-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            background-color: white;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .pagination-info {
+            font-size: 13px;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .pagination-links {
+            display: flex;
+            gap: 6px;
+        }
+
+        .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+            padding: 0 6px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            background: white;
+            border: 1px solid #e2e8f0;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .page-link:hover:not(.disabled) {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+            color: #1e293b;
+        }
+
+        .page-link.active {
+            background: #4a6741;
+            color: white;
+            border-color: #4a6741;
+            box-shadow: 0 2px 4px rgba(74, 103, 65, 0.2);
+        }
+
+        .page-link.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
+            background: #f8fafc;
+        }
+
     </style>
 
     <x-slot name="header">
@@ -150,7 +208,7 @@
                                 <th class="text-center" style="width: 60px;">No</th>
                                 <th class="text-left">Nama Kelas</th>
                                 <th class="text-left">Wali Kelas</th>
-                                <th class="text-left">Koordinat & Lokasi</th>
+                                <th class="text-left">Koordinat</th>
                                 <th class="text-center">Radius</th>
                                 <th class="text-center" style="width: 150px;">Opsi</th>
                             </tr>
@@ -189,8 +247,9 @@
                                         </span>
                                         
                                         @if($c->latitude2 && $c->longitude2)
-                                            <span class="badge-geo-alt" title="Lokasi Alternatif Aktif">
-                                                <i class="fa-solid fa-map-location-dot"></i> + Lokasi Alternatif
+                                            <span class="badge-geo" title="Lokasi Alternatif Aktif">
+                                                <i class="fa-solid fa-location-dot text-blue-600"></i>
+                                                {{ number_format($c->latitude2, 5) }}, {{ number_format($c->longitude2, 5) }}
                                             </span>
                                         @endif
                                     </div>
@@ -233,11 +292,40 @@
                     </table>
                 </div>
 
-                <!-- PAGINATION -->
+                <!-- PAGINATION CUSTOM -->
                 @if($classrooms->hasPages())
-                    <div class="pagination-wrapper">
-                        {{ $classrooms->appends(['search' => request('search')])->links() }}
+                <div class="custom-pagination">
+                    <!-- Info Halaman (Kiri) -->
+                    <div class="pagination-info">
+                        Menampilkan {{ $classrooms->firstItem() }} - {{ $classrooms->lastItem() }} dari {{ $classrooms->total() }} kelas
                     </div>
+                    
+                    <!-- Link Halaman (Kanan) -->
+                    <div class="pagination-links">
+                        {{-- Tombol Previous --}}
+                        @if ($classrooms->onFirstPage())
+                            <span class="page-link disabled"><i class="fa-solid fa-chevron-left"></i></span>
+                        @else
+                            <a href="{{ $classrooms->appends(['search' => request('search')])->previousPageUrl() }}" class="page-link"><i class="fa-solid fa-chevron-left"></i></a>
+                        @endif
+
+                        {{-- Angka Halaman (Smart Logic) --}}
+                        @foreach ($classrooms->getUrlRange(max(1, $classrooms->currentPage() - 2), min($classrooms->lastPage(), $classrooms->currentPage() + 2)) as $page => $url)
+                            @if ($page == $classrooms->currentPage())
+                                <span class="page-link active">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}&search={{ request('search') }}" class="page-link">{{ $page }}</a>
+                            @endif
+                        @endforeach
+
+                        {{-- Tombol Next --}}
+                        @if ($classrooms->hasMorePages())
+                            <a href="{{ $classrooms->appends(['search' => request('search')])->nextPageUrl() }}" class="page-link"><i class="fa-solid fa-chevron-right"></i></a>
+                        @else
+                            <span class="page-link disabled"><i class="fa-solid fa-chevron-right"></i></span>
+                        @endif
+                    </div>
+                </div>
                 @endif
             </div>
         </div>

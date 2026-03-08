@@ -35,4 +35,8 @@ class Classroom extends Model
     {
         return $this->hasMany(ClassMember::class);
     }
+    public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'classroom_id'); // sesuaikan foreign key jika berbeda
+    }
 }

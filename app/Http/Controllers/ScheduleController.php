@@ -12,23 +12,31 @@ class ScheduleController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Classroom::query();
+        // 1. Ambil Filter
+        $grade = $request->query('grade');
+        $search = $request->query('search');
 
-        if ($request->filled('grade')) {
-            $query->where('grade_level', $request->grade);
+        // 2. Query ke CLASSROOM (Bukan Schedule)
+        // Karena kita mau menampilkan daftar kelas dulu (Folder Style)
+        $query = \App\Models\Classroom::query();
+
+        // Filter Tingkat Kelas
+        if ($grade) {
+            $query->where('grade_level', $grade);
         }
 
-        if ($request->filled('search')) {
-            $query->where('name', 'like', '%' . $request->search . '%');
+        // Filter Pencarian Nama Kelas
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
         }
 
-        $classrooms = $query->paginate(10);
+        // 3. Eksekusi dengan Pagination (PENTING: Pakai paginate, jangan get)
+        $classrooms = $query->orderBy('grade_level', 'asc')
+                            ->orderBy('name', 'asc')
+                            ->paginate(10) // <--- INI KUNCINYA AGAR ERROR HILANG
+                            ->withQueryString();
 
-        return view('admin.schedules.index', [
-            'classrooms' => $classrooms,
-            'grade' => $request->grade,
-            'search' => $request->search,
-        ]);
+        return view('admin.schedules.index', compact('classrooms', 'grade', 'search'));
     }
 
     public function classroomShow(Classroom $classroom, Request $request)
@@ -63,14 +71,20 @@ class ScheduleController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'subject_id' => 'required|exists:subjects,id',
             'classroom_id' => 'required|exists:classrooms,id',
-            'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
             'start_time' => 'required',
-            'end_time' => 'required|after:start_time', 
+            'end_time' => 'required|after:start_time',
+            
+            // TAMBAHAN VALIDASI
+            'week_type' => 'required|in:all,odd,even', 
         ]);
 
+        // Simpan semua data request (termasuk week_type)
         Schedule::create($request->all());
 
-        return redirect()->route('schedules.index')->with('success', 'Jadwal berhasil dibuat!');
+        // Jika kamu ingin redirect kembali ke halaman detail kelas (agar user tidak bingung)
+        return redirect()->route('schedules.classroom.show', $request->classroom_id)
+                         ->with('success', 'Jadwal berhasil ditambahkan!');
     }
 
     public function edit(Schedule $schedule)
@@ -88,14 +102,19 @@ class ScheduleController extends Controller
             'teacher_id' => 'required|exists:users,id',
             'subject_id' => 'required|exists:subjects,id',
             'classroom_id' => 'required|exists:classrooms,id',
-            'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
+            'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
+            
+            // TAMBAHAN VALIDASI
+            'week_type' => 'required|in:all,odd,even',
         ]);
 
         $schedule->update($request->all());
 
-        return redirect()->route('schedules.index')->with('success', 'Jadwal berhasil diperbarui!');
+        // Redirect kembali ke halaman detail kelas
+        return redirect()->route('schedules.classroom.show', $schedule->classroom_id)
+                         ->with('success', 'Jadwal berhasil diperbarui!');
     }
 
     public function destroy(Schedule $schedule)

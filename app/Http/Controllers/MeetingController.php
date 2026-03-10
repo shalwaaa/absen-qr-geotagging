@@ -47,34 +47,51 @@ class MeetingController extends Controller
     }
 
     // --- DASHBOARD GURU ---
-    public function index()
+     public function index()
     {
-        // Panggil Cek Libur
+        // 1. Cek Libur (Logic sebelumnya)
         $holidayCheck = $this->checkHoliday();
         if ($holidayCheck['is_holiday']) return $holidayCheck['view'];
 
         Carbon::setLocale('id');
-        $today = Carbon::now()->isoFormat('dddd');
+        $today = Carbon::now('Asia/Jakarta')->isoFormat('dddd');
 
+        // ==========================================
+        // 2. LOGIKA MINGGU GANJIL/GENAP (PERBAIKAN)
+        // ==========================================
+        // Ambil nomor minggu saat ini (1 s.d 52)
+        $weekNumber = Carbon::now('Asia/Jakarta')->weekOfYear; 
+        
+        // Tentukan ini minggu genap atau ganjil
+        $currentWeekType = ($weekNumber % 2 == 0) ? 'even' : 'odd';
+        
+        // Buat string info untuk dikirim ke View (misal: "Minggu Genap")
+        $weekInfo = ($currentWeekType == 'odd') ? 'Minggu Ganjil' : 'Minggu Genap';
+        // ==========================================
+
+        // 3. Ambil Jadwal Guru
         $schedules = Schedule::with(['subject', 'classroom'])
             ->where('teacher_id', Auth::id())
             ->where('day', $today)
-            ->paginate(9)
-            ->withQueryString();
+            // FILTER: Hanya ambil jadwal yang tipenya 'all' ATAU sesuai minggu sekarang
+            ->whereIn('week_type', ['all', $currentWeekType]) 
+            ->orderBy('start_time')
+            ->get();
 
         foreach ($schedules as $s) {
             $s->today_meeting = Meeting::where('schedule_id', $s->id)
-                                       ->whereDate('date', Carbon::today())
+                                       ->whereDate('date', Carbon::today('Asia/Jakarta'))
                                        ->first();
         }
 
-        return view('teacher.dashboard', compact('schedules', 'today'));
+        // 4. Kirim variabel $weekInfo ke View
+        return view('teacher.dashboard', compact('schedules', 'today', 'weekInfo'));
     }
 
     // --- DASHBOARD PIKET ---
     public function piketIndex()
     {
-        // Panggil Cek Libur
+        // Cek Libur
         $holidayCheck = $this->checkHoliday();
         if ($holidayCheck['is_holiday']) return $holidayCheck['view'];
 
@@ -83,21 +100,27 @@ class MeetingController extends Controller
         }
 
         Carbon::setLocale('id');
-        $today = Carbon::now()->isoFormat('dddd');
+        $today = Carbon::now('Asia/Jakarta')->isoFormat('dddd');
 
+        // Logika Minggu Ganjil/Genap
+        $weekNumber = Carbon::now('Asia/Jakarta')->weekOfYear; 
+        $currentWeekType = ($weekNumber % 2 == 0) ? 'even' : 'odd';
+        $weekInfo = ($currentWeekType == 'odd') ? 'Minggu Ganjil' : 'Minggu Genap';
+
+        // Ambil SEMUA jadwal hari ini yang sesuai tipe minggu
         $schedules = Schedule::with(['teacher', 'subject', 'classroom'])
             ->where('day', $today)
+            ->whereIn('week_type', ['all', $currentWeekType]) // Filter minggu
             ->orderBy('start_time')
-            ->paginate(9)
-            ->withQueryString();
+            ->get();
 
         foreach ($schedules as $s) {
             $s->today_meeting = Meeting::where('schedule_id', $s->id)
-                                       ->whereDate('date', Carbon::today())
+                                       ->whereDate('date', Carbon::today('Asia/Jakarta'))
                                        ->first();
         }
 
-        return view('teacher.piket', compact('schedules', 'today'));
+        return view('teacher.piket', compact('schedules', 'today', 'weekInfo'));
     }
 
     // ... (Sisa method store, show, toggle, regenerate biarkan sama) ...

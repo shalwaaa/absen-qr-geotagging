@@ -383,6 +383,45 @@
             margin-bottom: 20px;
         }
 
+        /* PAGINATION CUSTOM STYLE */
+        .custom-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            background-color: white;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+        }
+
+        .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+        .pagination-links { display: flex; gap: 6px; }
+
+        .page-link {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 32px; height: 32px; padding: 0 6px;
+            border-radius: 8px; font-size: 13px; font-weight: 600;
+            color: #475569; background: white; border: 1px solid #e2e8f0;
+            text-decoration: none; transition: all 0.2s;
+        }
+
+        .page-link:hover:not(.disabled) {
+            background: #f8fafc; border-color: #cbd5e1; color: #1e293b;
+        }
+
+        .page-link.active {
+            background: var(--medium-green); /* Hijau Monitoring */
+            color: white; border-color: var(--medium-green);
+            box-shadow: 0 2px 4px rgba(45, 81, 40, 0.2);
+        }
+
+        .page-link.disabled {
+            color: #cbd5e1; cursor: not-allowed; background: #f8fafc;
+        }
+
         /* RESPONSIVE DESIGN */
         @media (max-width: 1024px) {
             .search-container {
@@ -461,6 +500,45 @@
                 display: block;
                 overflow-x: auto;
             }
+
+            /* PAGINATION CUSTOM STYLE */
+        .custom-pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-top: 1px solid #f1f5f9;
+            background-color: white;
+            flex-wrap: wrap;
+            gap: 12px;
+            border-bottom-left-radius: 18px;
+            border-bottom-right-radius: 18px;
+        }
+
+        .pagination-info { font-size: 13px; color: #64748b; font-weight: 500; }
+        .pagination-links { display: flex; gap: 6px; }
+
+        .page-link {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 32px; height: 32px; padding: 0 6px;
+            border-radius: 8px; font-size: 13px; font-weight: 600;
+            color: #475569; background: white; border: 1px solid #e2e8f0;
+            text-decoration: none; transition: all 0.2s;
+        }
+
+        .page-link:hover:not(.disabled) {
+            background: #f8fafc; border-color: #cbd5e1; color: #1e293b;
+        }
+
+        .page-link.active {
+            background: var(--medium-green); /* Hijau Monitoring */
+            color: white; border-color: var(--medium-green);
+            box-shadow: 0 2px 4px rgba(45, 81, 40, 0.2);
+        }
+
+        .page-link.disabled {
+            color: #cbd5e1; cursor: not-allowed; background: #f8fafc;
+        }
         }
     </style>
 
@@ -678,7 +756,44 @@
             </div>
 
         </div>
+        
     </div>
+
+    <!-- PAGINATION CUSTOM -->
+                @if($monitoringData instanceof \Illuminate\Pagination\LengthAwarePaginator && $monitoringData->hasPages())
+                <div class="custom-pagination">
+                    <!-- Info Halaman (Kiri) -->
+                    <div class="pagination-info">
+                        Menampilkan {{ $monitoringData->firstItem() }} - {{ $monitoringData->lastItem() }} dari {{ $monitoringData->total() }} jadwal
+                    </div>
+                    
+                    <!-- Link Halaman (Kanan) -->
+                    <div class="pagination-links">
+                        {{-- Tombol Previous --}}
+                        @if ($monitoringData->onFirstPage())
+                            <span class="page-link disabled"><i class="fa-solid fa-chevron-left"></i></span>
+                        @else
+                            <a href="{{ $monitoringData->appends(['search' => request('search')])->previousPageUrl() }}" class="page-link"><i class="fa-solid fa-chevron-left"></i></a>
+                        @endif
+
+                        {{-- Angka Halaman --}}
+                        @foreach ($monitoringData->getUrlRange(max(1, $monitoringData->currentPage() - 2), min($monitoringData->lastPage(), $monitoringData->currentPage() + 2)) as $page => $url)
+                            @if ($page == $monitoringData->currentPage())
+                                <span class="page-link active">{{ $page }}</span>
+                            @else
+                                <a href="{{ $url }}&search={{ request('search') }}" class="page-link">{{ $page }}</a>
+                            @endif
+                        @endforeach
+
+                        {{-- Tombol Next --}}
+                        @if ($monitoringData->hasMorePages())
+                            <a href="{{ $monitoringData->appends(['search' => request('search')])->nextPageUrl() }}" class="page-link"><i class="fa-solid fa-chevron-right"></i></a>
+                        @else
+                            <span class="page-link disabled"><i class="fa-solid fa-chevron-right"></i></span>
+                        @endif
+                    </div>
+                </div>
+                @endif
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

@@ -81,7 +81,7 @@
                 </div>
 
                 <button type="submit" class="btn-print">
-                    <i class="fa-solid fa-print"></i> GENERATE PDF
+                    <i class="fa-solid fa-print"></i> EXPORT PDF
                 </button>
             </form>
         </div>

@@ -95,6 +95,16 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label class="form-label">Berlaku Untuk Minggu?</label>
+                            <select name="week_type" class="form-input">
+                                <option value="all">Setiap Minggu (Rutin)</option>
+                                <option value="odd">Minggu Ganjil (1, 3, 5...)</option>
+                                <option value="even">Minggu Genap (2, 4, 6...)</option>
+                            </select>
+                            <p class="text-xs text-gray-400 mt-1">Gunakan 'Ganjil/Genap' untuk jadwal selang-seling.</p>
+                        </div>
+
                         <!-- GURU (PAKAI SEARCH) -->
                         <div class="form-group">
                             <label class="form-label">Guru Pengajar</label>

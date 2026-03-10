@@ -60,4 +60,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(ClassMember::class, 'student_id');
     }
+
+       public function schedules()
+    {
+        return $this->hasMany(Schedule::class, 'teacher_id');
+    }
 }

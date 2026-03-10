@@ -86,7 +86,11 @@
     <x-slot name="header">
         <h1 class="text-3xl font-black text-white mb-1" style="color: #E4EB9C">Jadwal Hari Ini</h1>
         <p class="text-white/80 text-sm italic font-medium" style="color: #E4EB9C">
-            <i class="fa-solid fa-calendar-day mr-1"></i> {{ $today }}
+            <span><i class="fa-solid fa-calendar-day mr-1"></i> {{ $today }}</span>
+            <span>|</span>
+            <span class="bg-white/20 px-2 py-0.5 rounded text-white font-bold">
+                {{ $weekInfo }}
+            </span>
         </p>
     </x-slot>
 

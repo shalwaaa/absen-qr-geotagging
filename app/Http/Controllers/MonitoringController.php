@@ -164,8 +164,20 @@ class MonitoringController extends Controller
             return $valA <=> $valB;
         });
 
-        return view('admin.monitoring.index', [
-            'monitoringData' => $monitoringData,
+        // MANUAL PAGINATION UNTUK COLLECTION
+        $perPage = 10;
+        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $paginatedItems = $monitoringData->slice(($page - 1) * $perPage, $perPage)->values();
+        
+        $paginatedMonitoringData = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $monitoringData->count(),
+            $perPage,
+            $page,['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath(), 'query' => $request->query()]
+        );
+
+        return view('admin.monitoring.index',[
+            'monitoringData' => $paginatedMonitoringData, // <--- Gunakan yang sudah dipaginate
             'today' => $todayName,
             'search' => $search,
         ]);

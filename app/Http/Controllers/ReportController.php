@@ -83,92 +83,133 @@ class ReportController extends Controller
 
     // Fungsi Private untuk Guru (BARU)
     // Fungsi Private untuk Guru (VERSI LENGKAP S/I/A)
+   // Fungsi Private untuk Laporan Guru
+    // Fungsi Private untuk Laporan Guru (VERSI SUPER CEPAT / OPTIMIZED)
     private function generateTeacherReport($startDate, $endDate)
     {
-        // 1. Ambil semua guru
-        $teachers = User::where('role', 'teacher')->orderBy('name')->get();
-        $data = [];
+        // Set limit waktu jaga-jaga
+        set_time_limit(300); 
 
-        // 2. Loop setiap guru
+        // 1. Ambil semua guru BESERTA jadwalnya sekaligus (Eager Loading)
+        $teachers = User::where('role', 'teacher')
+                        ->with('schedules') 
+                        ->orderBy('name')
+                        ->get();
+
+        // 2. Tarik SEMUA Hari Libur di rentang waktu tersebut ke dalam Array
+        $holidayDates = \App\Models\Holiday::whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                                           ->pluck('date')
+                                           ->map(fn($date) => $date->format('Y-m-d'))
+                                           ->toArray();
+
+        // 3. Tarik SEMUA Izin Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
+        $leaveRequests = \App\Models\LeaveRequest::whereHas('student', fn($q) => $q->where('role', 'teacher'))
+                                                 ->where('status', 'approved')
+                                                 ->where(function($q) use ($startDate, $endDate) {
+                                                     $q->whereBetween('start_date', [$startDate, $endDate])
+                                                       ->orWhereBetween('end_date',[$startDate, $endDate]);
+                                                 })
+                                                 ->get()
+                                                 ->groupBy('student_id');
+
+        // 4. Tarik SEMUA Absen Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
+        $attendances = Attendance::whereHas('student', fn($q) => $q->where('role', 'teacher'))
+                                 ->where('status', 'present')
+                                 ->whereBetween('scan_time', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
+                                 ->get()
+                                 ->groupBy('student_id');
+
+        // 5. Siapkan Hari Valid (Singkirkan Sabtu, Minggu & Libur Nasional di awal biar cepat)
+        $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
+        $validDays =[];
+        foreach ($period as $date) {
+            $dateString = $date->format('Y-m-d');
+            
+            // Jika Sabtu, Minggu, atau ada di array hari libur -> Skip
+            if ($date->isWeekend() || in_array($dateString, $holidayDates)) {
+                continue;
+            }
+            // Simpan nama hari (Senin, Selasa...)
+            $validDays[$dateString] = $date->locale('id')->isoFormat('dddd');
+        }
+
+        $data =[];
+
+        // --- MULAI PERHITUNGAN (Semuanya terjadi di RAM, sangat cepat) ---
         foreach ($teachers as $teacher) {
             
-            $stats = [
-                'present' => 0,
-                'sick' => 0,
-                'permission' => 0,
-                'alpha' => 0,
-                'total_scheduled' => 0
-            ];
+            $present = 0;
+            $sick = 0;
+            $permission = 0;
+            $alpha = 0;
+            $totalScheduled = 0;
 
-            // Ambil semua jadwal guru ini (Senin, Selasa, dll)
-            $schedules = \App\Models\Schedule::where('teacher_id', $teacher->id)->get();
+            // Ambil data izin dan absen khusus guru ini dari memori
+            $teacherLeaves = $leaveRequests->get($teacher->id, collect());
+            $teacherAttendances = $attendances->get($teacher->id, collect());
 
-            // 3. Loop setiap HARI dalam rentang tanggal yang dipilih
-            $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
-
-            foreach ($period as $date) {
-                $dayName = $date->locale('id')->isoFormat('dddd'); // Senin, Selasa...
+            // Loop HANYA di hari-hari kerja
+            foreach ($validDays as $dateString => $dayName) {
                 
-                // Cek berapa sesi guru ini mengajar di hari tersebut
-                $dailySchedulesCount = $schedules->where('day', $dayName)->count();
+                // Berapa jadwal guru ini di hari tersebut?
+                $dailySchedulesCount = $teacher->schedules->where('day', $dayName)->count();
 
                 if ($dailySchedulesCount > 0) {
-                    $stats['total_scheduled'] += $dailySchedulesCount;
+                    $totalScheduled += $dailySchedulesCount;
 
-                    // A. Cek Izin/Sakit di Tanggal Ini
-                    $leave = \App\Models\LeaveRequest::where('student_id', $teacher->id) // Reuse kolom student_id sbg user_id
-                        ->where('status', 'approved')
-                        ->whereDate('start_date', '<=', $date)
-                        ->whereDate('end_date', '>=', $date)
-                        ->first();
-
-                    if ($leave) {
-                        if ($leave->type == 'sick') {
-                            $stats['sick'] += $dailySchedulesCount;
-                        } else {
-                            $stats['permission'] += $dailySchedulesCount;
+                    // A. Cek Izin/Sakit
+                    $isLeave = false;
+                    foreach ($teacherLeaves as $leave) {
+                        $startLeave = \Carbon\Carbon::parse($leave->start_date)->format('Y-m-d');
+                        $endLeave = \Carbon\Carbon::parse($leave->end_date)->format('Y-m-d');
+                        
+                        if ($dateString >= $startLeave && $dateString <= $endLeave) {
+                            if ($leave->type == 'sick') {
+                                $sick += $dailySchedulesCount;
+                            } else {
+                                $permission += $dailySchedulesCount;
+                            }
+                            $isLeave = true;
+                            break;
                         }
-                        continue; // Lanjut hari berikutnya (karena sudah izin)
                     }
 
-                    // B. Cek Kehadiran (Scan QR)
-                    // Cari meeting di tanggal ini dimana guru ini hadir
-                    $presents = Attendance::where('student_id', $teacher->id)
-                        ->where('status', 'present')
-                        ->whereHas('meeting', function($q) use ($date) {
-                            $q->whereDate('date', $date);
-                        })
-                        ->count();
+                    if ($isLeave) continue; // Lanjut ke hari berikutnya
 
-                    $stats['present'] += $presents;
+                    // B. Cek Kehadiran
+                    $presentsCount = $teacherAttendances->filter(function($att) use ($dateString) {
+                        return \Carbon\Carbon::parse($att->scan_time)->format('Y-m-d') === $dateString;
+                    })->count();
 
-                    // C. Hitung Alpha (Jadwal - (Hadir + Izin))
-                    // Jika dia jadwal 3 kelas, tapi cuma scan 1, berarti 2 Alpha
-                    // Jika Izin, Alpha 0.
-                    $missing = $dailySchedulesCount - $presents;
+                    $present += $presentsCount;
+
+                    // C. Hitung Alpha
+                    $missing = $dailySchedulesCount - $presentsCount;
                     if ($missing > 0) {
-                        $stats['alpha'] += $missing;
+                        $alpha += $missing;
                     }
                 }
             }
 
-            // Hitung Persentase Kehadiran
-            $percentage = $stats['total_scheduled'] > 0 
-                ? round(($stats['present'] / $stats['total_scheduled']) * 100) 
-                : 0;
+            // Hitung Persentase Akhir
+            $percentage = $totalScheduled > 0 ? round(($present / $totalScheduled) * 100) : 0;
 
-            $data[] = [
+            $data[] =[
                 'name' => $teacher->name,
                 'nip' => $teacher->nip_nis,
-                'stats' => $stats,
+                'present' => $present,
+                'sick' => $sick,
+                'permission' => $permission,
+                'alpha' => $alpha,
+                'total_scheduled' => $totalScheduled,
                 'percent' => $percentage
             ];
         }
 
+        // Render PDF
         $pdf = Pdf::loadView('admin.reports.pdf_teacher', compact('startDate', 'endDate', 'data'));
-        // Set orientasi Landscape agar muat banyak kolom
         $pdf->setPaper('a4', 'landscape');
         
-        return $pdf->stream('Laporan-Guru.pdf');
+        return $pdf->stream('Laporan-Aktivitas-Guru.pdf');
     }
 }

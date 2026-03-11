@@ -17,7 +17,6 @@ class ScheduleController extends Controller
         $search = $request->query('search');
 
         // 2. Query ke CLASSROOM (Bukan Schedule)
-        // Karena kita mau menampilkan daftar kelas dulu (Folder Style)
         $query = \App\Models\Classroom::query();
 
         // Filter Tingkat Kelas
@@ -30,19 +29,21 @@ class ScheduleController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        // 3. Eksekusi dengan Pagination (PENTING: Pakai paginate, jangan get)
+        // 3. Eksekusi dengan Pagination]
         $classrooms = $query->orderBy('grade_level', 'asc')
                             ->orderBy('name', 'asc')
-                            ->paginate(10) // <--- INI KUNCINYA AGAR ERROR HILANG
+                            ->paginate(10) 
                             ->withQueryString();
 
         return view('admin.schedules.index', compact('classrooms', 'grade', 'search'));
     }
 
+    // Tampilkan Jadwal per Kelas
     public function classroomShow(Classroom $classroom, Request $request)
     {
         $query = $classroom->schedules()->with(['subject', 'teacher']);
 
+        // Filter berdasarkan hari jika ada
         if ($request->filled('day')) {
             $query->where('day', $request->day);
         }
@@ -58,6 +59,7 @@ class ScheduleController extends Controller
 
     public function create()
     {
+        // Ambil data guru, mata pelajaran, dan kelas untuk dropdown
         $teachers = User::where('role', 'teacher')->get();
         $subjects = Subject::all();
         $classrooms = Classroom::all();
@@ -74,21 +76,19 @@ class ScheduleController extends Controller
             'day' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
             'start_time' => 'required',
             'end_time' => 'required|after:start_time',
-            
-            // TAMBAHAN VALIDASI
             'week_type' => 'required|in:all,odd,even', 
         ]);
 
-        // Simpan semua data request (termasuk week_type)
+        // Simpan semua data request
         Schedule::create($request->all());
 
-        // Jika kamu ingin redirect kembali ke halaman detail kelas (agar user tidak bingung)
         return redirect()->route('schedules.classroom.show', $request->classroom_id)
                          ->with('success', 'Jadwal berhasil ditambahkan!');
     }
 
     public function edit(Schedule $schedule)
     {
+        // Ambil data guru, mata pelajaran, dan kelas untuk dropdown
         $teachers = User::where('role', 'teacher')->get();
         $subjects = Subject::all();
         $classrooms = Classroom::all();

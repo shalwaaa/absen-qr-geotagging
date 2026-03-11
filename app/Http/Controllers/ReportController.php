@@ -22,7 +22,7 @@ class ReportController extends Controller
     public function generate(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:student,teacher', // Tambah validasi tipe
+            'type' => 'required|in:student,teacher', // validasi tipe
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             // Classroom ID hanya wajib jika tipe-nya student
@@ -32,16 +32,16 @@ class ReportController extends Controller
         $startDate = Carbon::parse($request->start_date);
         $endDate = Carbon::parse($request->end_date);
 
-        // --- LOGIKA LAPORAN GURU ---
+        // LOGIKA LAPORAN GURU 
         if ($request->type == 'teacher') {
             return $this->generateTeacherReport($startDate, $endDate);
         }
 
-        // --- LOGIKA LAPORAN SISWA (Kode Lama) ---
+        // LOGIKA LAPORAN SISWA 
         return $this->generateStudentReport($request->classroom_id, $startDate, $endDate);
     }
 
-    // Fungsi Private untuk Siswa (Dipisah biar rapi)
+    // Fungsi Private untuk Siswa
     private function generateStudentReport($classroomId, $startDate, $endDate)
     {
         $classroom = Classroom::findOrFail($classroomId);
@@ -52,6 +52,7 @@ class ReportController extends Controller
 
         $data = [];
 
+        // Kita loop per siswa untuk menghitung kehadiran masing-masing
         foreach ($students as $student) {
             $attendances = Attendance::where('student_id', $student->id)
                 ->whereHas('meeting', function($q) use ($startDate, $endDate, $classroom) {
@@ -61,11 +62,13 @@ class ReportController extends Controller
                       });
                 })->get();
 
+            // Hitung jumlah kehadiran berdasarkan status
             $present = $attendances->where('status', 'present')->count();
             $sick = $attendances->where('status', 'sick')->count();
             $perm = $attendances->where('status', 'permission')->count();
             $total = $present + $sick + $perm;
 
+            // Simpan data untuk PDF
             $data[] = [
                 'name' => $student->name,
                 'nis' => $student->nip_nis,
@@ -81,10 +84,8 @@ class ReportController extends Controller
         return $pdf->stream('Laporan-Siswa-'.$classroom->name.'.pdf');
     }
 
-    // Fungsi Private untuk Guru (BARU)
-    // Fungsi Private untuk Guru (VERSI LENGKAP S/I/A)
-   // Fungsi Private untuk Laporan Guru
-    // Fungsi Private untuk Laporan Guru (VERSI SUPER CEPAT / OPTIMIZED)
+    // Fungsi Private untuk Guru
+    // Logika lebih kompleks karena harus cek jadwal, izin, dan kehadiran guru di setiap hari kerja
     private function generateTeacherReport($startDate, $endDate)
     {
         // Set limit waktu jaga-jaga
@@ -102,7 +103,7 @@ class ReportController extends Controller
                                            ->map(fn($date) => $date->format('Y-m-d'))
                                            ->toArray();
 
-        // 3. Tarik SEMUA Izin Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
+        // 3. Tarik semua AZIN Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
         $leaveRequests = \App\Models\LeaveRequest::whereHas('student', fn($q) => $q->where('role', 'teacher'))
                                                  ->where('status', 'approved')
                                                  ->where(function($q) use ($startDate, $endDate) {
@@ -112,14 +113,14 @@ class ReportController extends Controller
                                                  ->get()
                                                  ->groupBy('student_id');
 
-        // 4. Tarik SEMUA Absen Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
+        // 4. Tarik semua ABSEN Guru di rentang waktu tersebut, kelompokkan berdasarkan ID Guru
         $attendances = Attendance::whereHas('student', fn($q) => $q->where('role', 'teacher'))
                                  ->where('status', 'present')
                                  ->whereBetween('scan_time', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
                                  ->get()
                                  ->groupBy('student_id');
 
-        // 5. Siapkan Hari Valid (Singkirkan Sabtu, Minggu & Libur Nasional di awal biar cepat)
+        // 5. Siapkan Hari Valid (Singkirkan Sabtu, Minggu & Libur Nasional)
         $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
         $validDays =[];
         foreach ($period as $date) {
@@ -129,13 +130,13 @@ class ReportController extends Controller
             if ($date->isWeekend() || in_array($dateString, $holidayDates)) {
                 continue;
             }
-            // Simpan nama hari (Senin, Selasa...)
+            // Simpan nama hari untuk memudahkan pengecekan jadwal guru nanti
             $validDays[$dateString] = $date->locale('id')->isoFormat('dddd');
         }
 
         $data =[];
 
-        // --- MULAI PERHITUNGAN (Semuanya terjadi di RAM, sangat cepat) ---
+        // MULAI PERHITUNGAN
         foreach ($teachers as $teacher) {
             
             $present = 0;
@@ -163,6 +164,7 @@ class ReportController extends Controller
                         $startLeave = \Carbon\Carbon::parse($leave->start_date)->format('Y-m-d');
                         $endLeave = \Carbon\Carbon::parse($leave->end_date)->format('Y-m-d');
                         
+                        // Jika tanggal ini masuk di rentang izin, maka hitung sebagai izin/sakit sesuai tipe-nya
                         if ($dateString >= $startLeave && $dateString <= $endLeave) {
                             if ($leave->type == 'sick') {
                                 $sick += $dailySchedulesCount;

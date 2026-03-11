@@ -9,6 +9,7 @@ class SubjectController extends Controller
 {
     public function index(Request $request)
         {
+            //  Ambil Filter
             $grade = $request->query('grade'); // Ambil filter tingkat
             $search = $request->query('search');
 

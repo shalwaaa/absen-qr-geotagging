@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
 
+
+//GA KEPAKE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 class AcademicYearController extends Controller
 {
     public function index()
@@ -16,7 +19,7 @@ class AcademicYearController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:50', // Misal: 2025/2026 Ganjil
+            'name' => 'required|string|max:50', 
             'start_date' => 'required|date',
             'end_date' => 'required|date|after:start_date',
         ]);

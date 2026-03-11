@@ -26,7 +26,7 @@ class AttendanceController extends Controller
             'longitude' => 'required',
         ]);
 
-        // CEK 1: Status Siswa (Active/Lulus/Keluar)
+        // Cek Status Siswa (Active/Lulus/Keluar)
         if (Auth::user()->status != 'active') {
             return response()->json([
                 'status' => 'error',
@@ -53,12 +53,12 @@ class AttendanceController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Data Jadwal/Kelas tidak lengkap.'], 500);
             }
 
-            // ========================================================
+            
             // VALIDASI KELAS SISWA (Anti Salah Masuk Kelas)
-            // ========================================================
             $studentClassId = Auth::user()->classroom_id;
             $meetingClassId = $meeting->schedule->classroom_id;
 
+            // Cek apakah siswa memiliki kelas
             if (!$studentClassId) {
                 return response()->json([
                     'status' => 'error',
@@ -66,6 +66,7 @@ class AttendanceController extends Controller
                 ], 403);
             }
 
+            // Cek apakah kelas siswa sama dengan kelas meeting
             if ($studentClassId != $meetingClassId) {
                 $studentClassName = Auth::user()->classroom->name ?? '-';
                 return response()->json([
@@ -82,9 +83,7 @@ class AttendanceController extends Controller
                 return response()->json(['status' => 'error', 'message' => 'Anda sudah absen di sesi ini!'], 400);
             }
 
-            // ========================================================
             // VALIDASI JARAK (DOUBLE LOCATION)
-            // ========================================================
             $classroom = $meeting->schedule->classroom;
             $radiusAllowed = $classroom->radius_meters;
 
@@ -109,6 +108,7 @@ class AttendanceController extends Controller
 
             Log::info("Absen Siswa: " . Auth::user()->name . " | Jarak 1: $distance1 | Jarak 2: $distance2 | Final: $minDistance");
 
+            // Validasi Jarak
             if ($minDistance > $radiusAllowed) {
                 return response()->json([
                     'status' => 'error',
@@ -123,15 +123,17 @@ class AttendanceController extends Controller
                 'status' => 'present',
                 'latitude_student' => $request->latitude,
                 'longitude_student' => $request->longitude,
-                'distance_meters' => $minDistance, // <--- PERBAIKAN: Gunakan $minDistance
+                'distance_meters' => $minDistance, 
                 'scan_time' => now(),
             ]);
 
+            // Respon Sukses dengan Jarak
             return response()->json([
                 'status' => 'success',
-                'message' => 'Berhasil! Jarak: ' . round($minDistance) . 'm' // <--- PERBAIKAN: Gunakan $minDistance
+                'message' => 'Berhasil! Jarak: ' . round($minDistance) . 'm'
             ]);
 
+            // Catatan: Jika ingin menyimpan data tambahan seperti user agent, waktu scan, dll, bisa ditambahkan di sini.
         } catch (\Exception $e) {
             Log::error("Error Absensi: " . $e->getMessage());
             return response()->json([

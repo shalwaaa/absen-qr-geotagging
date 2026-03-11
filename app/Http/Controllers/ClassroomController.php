@@ -11,9 +11,11 @@ class ClassroomController extends Controller
 {
     public function index(Request $request)
     {
+        // Fitur Pencarian
         $search = $request->input('search');
         $query = Classroom::with('homeroomTeacher');
 
+        // Pencarian berdasarkan nama kelas atau nama wali kelas
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
@@ -23,6 +25,7 @@ class ClassroomController extends Controller
             });
         }
 
+        // Urutkan berdasarkan tingkat kelas (grade_level) dan nama kelas
         $classrooms = $query->orderBy('grade_level', 'asc')
                             ->orderBy('name', 'asc')
                             ->paginate(10)
@@ -33,12 +36,14 @@ class ClassroomController extends Controller
 
     public function create()
     {
+        // Ambil daftar guru untuk dropdown wali kelas
         $teachers = User::where('role', 'teacher')->get();
         return view('admin.classrooms.create', compact('teachers'));
     }
 
     public function store(Request $request)
     {
+        // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
             'grade_level' => 'required|integer|min:1|max:12',
@@ -57,12 +62,14 @@ class ClassroomController extends Controller
 
     public function edit(Classroom $classroom)
     {
+        // Ambil daftar guru untuk dropdown wali kelas
         $teachers = User::where('role', 'teacher')->get();
         return view('admin.classrooms.edit', compact('classroom', 'teachers'));
     }
 
     public function update(Request $request, Classroom $classroom)
     {
+        // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',
             'grade_level' => 'required|integer|min:1|max:12',
@@ -81,17 +88,20 @@ class ClassroomController extends Controller
 
     public function destroy(Classroom $classroom)
     {
+        // Hapus data kelas beserta relasinya
         $classroom->delete();
         return redirect()->route('classrooms.index')->with('success', 'Kelas berhasil dihapus!');
     }
 
     public function show(Classroom $classroom)
     {
+        // Tampilkan detail kelas beserta wali kelas
         return view('admin.classrooms.show', compact('classroom'));
     }
 
     public function destroyAll()
     {
+        // Hapus semua data kelas beserta relasinya dalam satu transaksi untuk menjaga integritas data
         DB::transaction(function () {
             // Ambil semua ID kelas yang akan dihapus
             $classroomIds = Classroom::pluck('id');

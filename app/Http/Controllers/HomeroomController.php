@@ -13,10 +13,12 @@ use Carbon\Carbon;
 
 class HomeroomController extends Controller
 {
+    // 1. Tampilkan Halaman Pengajuan Izin Siswa
     public function index()
     {
         $classroom = Classroom::where('homeroom_teacher_id', Auth::id())->first();
 
+        // Jika tidak ada kelas yang diasuh, tampilkan halaman khusus
         if (!$classroom) {
             return view('teacher.homeroom.no_class');
         }
@@ -41,15 +43,15 @@ class HomeroomController extends Controller
         return view('teacher.homeroom.index', compact('classroom', 'pendingLeaves', 'historyLeaves', 'students'));
     }
 
+    // 2. Proses Persetujuan / Penolakan Pengajuan Izin Siswa
     public function updateStatus(Request $request, $id)
     {
+        // Validasi input
         $leave = LeaveRequest::findOrFail($id);
         
         if ($request->action == 'approve') {
             $leave->status = 'approved';
             
-            // --- LOGIKA PERBAIKAN: SET LOCALE INDONESIA ---
-            // Penting agar "Monday" jadi "Senin"
             Carbon::setLocale('id'); 
             
             $startDate = Carbon::parse($leave->start_date);
@@ -61,7 +63,6 @@ class HomeroomController extends Controller
             // Loop while lebih aman daripada for
             while ($loopDate->lte($endDate)) {
                 
-                // Ambil nama hari dalam Bahasa Indonesia (Senin, Selasa...)
                 $dayName = $loopDate->isoFormat('dddd'); 
 
                 // Cari Jadwal Pelajaran di hari tersebut untuk kelas ini
@@ -70,12 +71,10 @@ class HomeroomController extends Controller
                                      ->paginate(10)
                                      ->withQueryString();
 
-                // Debugging: Jika kamu mau cek apakah jadwal ketemu, bisa pakai dd($schedules);
 
                 foreach ($schedules as $schedule) {
                     
                     // 1. Pastikan Meeting ada (Buat kalau belum ada)
-                    // PENTING: qr_token harus unik, kita pakai random
                     $meeting = Meeting::firstOrCreate(
                         [
                             'schedule_id' => $schedule->id,
@@ -83,7 +82,7 @@ class HomeroomController extends Controller
                         ],
                         [
                             'qr_token' => \Illuminate\Support\Str::random(40),
-                            'is_active' => false, // Biarkan false dulu
+                            'is_active' => false, 
                             'opened_by' => null 
                         ]
                     );

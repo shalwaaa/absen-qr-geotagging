@@ -18,11 +18,13 @@ class LeaveRequestController extends Controller
 
     public function create()
     {
+        // Tampilkan form pengajuan izin
         return view('student.leaves.create');
     }
 
     public function store(Request $request)
     {
+        // Validasi input
         $request->validate([
             'type' => 'required|in:sick,permission',
             'start_date' => 'required|date',
@@ -31,6 +33,7 @@ class LeaveRequestController extends Controller
             'attachment' => 'nullable|image|max:2048',
         ]);
 
+        // Handle file upload jika ada
         $path = null;
         if ($request->hasFile('attachment')) {
             $path = $request->file('attachment')->store('attachments', 'public');

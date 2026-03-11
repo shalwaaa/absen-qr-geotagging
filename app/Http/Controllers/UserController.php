@@ -15,6 +15,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
+        // Ambil Filter
         $type = $request->query('type', 'student');
         $search = $request->query('search');
         $yearId = $request->query('year_id'); // Filter Tahun
@@ -29,7 +30,7 @@ class UserController extends Controller
         $query = User::where('role', $type);
 
         if ($type == 'student' && $yearId) {
-            // FILTER ALA FOLDER:
+            // FILTER ALA FOLDER
             // Ambil siswa yang PUNYA DATA di tabel class_members pada tahun yg dipilih
             $query->whereHas('classMembers', function($q) use ($yearId) {
                 $q->where('academic_year_id', $yearId);
@@ -41,6 +42,7 @@ class UserController extends Controller
             }]);
         }
 
+        // Filter berdasarkan nama atau NIP/NIS
         if ($search) {
             $query->where(function($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")

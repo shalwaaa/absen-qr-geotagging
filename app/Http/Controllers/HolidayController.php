@@ -61,7 +61,7 @@ class HolidayController extends Controller
         $holiday = Holiday::findOrFail($id);
         $holiday->delete();
 
-        // LOGIKA BARU: Cek apakah request dari AJAX/Fetch?
+        // Cek apakah request dari AJAX/Fetch?
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
@@ -78,20 +78,21 @@ class HolidayController extends Controller
     {
         // Ambil tahun dari request, atau default tahun ini
         $year = $request->input('year', date('Y'));
-        
-        // API: libur.deno.dev
+
         // Format Response: [{"date": "2024-01-01", "name": "Tahun Baru Masehi", "is_holiday": true}, ...]
         $apiUrl = "https://libur.deno.dev/api?year=" . $year;
 
+        // Coba tarik data dari API
         try {
             $response = Http::timeout(10)->get($apiUrl);
             
+            // Cek apakah response sukses
             if ($response->successful()) {
                 $holidays = $response->json(); 
                 $count = 0;
 
+                // Proses setiap data libur dari API
                 foreach ($holidays as $h) {
-                    // Pastikan cuma ambil yang is_holiday = true (walaupun biasanya API ini isinya libur semua)
                     if (isset($h['is_holiday']) && $h['is_holiday'] == false) {
                         continue;
                     }
@@ -113,6 +114,7 @@ class HolidayController extends Controller
                     }
                 }
                 
+                // Kembalikan pesan sukses dengan jumlah data yang ditambahkan
                 return back()->with('success', "Berhasil menarik {$count} hari libur nasional tahun {$year}.");
             } else {
                 return back()->with('error', 'Gagal menghubungi server API Libur.');
@@ -123,6 +125,7 @@ class HolidayController extends Controller
         }
     }
 
+    // 5. Tampilkan Kalender Libur (FullCalendar)
     public function calendar()
 {
     $holidays = Holiday::all();

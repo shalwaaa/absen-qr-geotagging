@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    // Tampilkan dashboard sesuai peran pengguna
     public function index()
     {
         $role = Auth::user()->role;

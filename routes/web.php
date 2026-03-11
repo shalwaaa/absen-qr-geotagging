@@ -56,7 +56,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             // Daftar Jurusan (Sesuaikan dengan singkatan di nama kelas)
             $majors = ['PPLG', 'TJKT', 'MPLB', 'AKKUL', 'PS'];
             
-            // Siapkan Bulan (6 Bulan Terakhir)
+            // Bulan (6 Bulan Terakhir)
             $months = [];
             $chartLabels = [];
             for ($i = 5; $i >= 0; $i--) {
@@ -99,6 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                                 ->whereMonth('date', $month->month)
                                 ->count();
 
+                        // Hitung Persentase Hadir
                         $max = $siswaCount * $sesiCount;
                         $percentage = ($max > 0) ? round(($hadir / $max) * 100) : 0;
                         $dataPoints[] = $percentage;
@@ -132,7 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         }
         
     else {
-        // --- LOGIC DATA DASHBOARD SISWA ---
+        // LOGIC DATA DASHBOARD SISWA
         
         $userId = Auth::id();
         $currentMonth = Carbon::now()->month;
@@ -146,7 +147,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         ->count();
 
         // 2. Hitung Ketepatan (Persentase Hadir vs Total Pertemuan)
-        // Kita anggap Total Pertemuan = Hadir + Sakit + Izin + Alpha
+        // anggap Total Pertemuan = Hadir + Sakit + Izin + Alpha
         $totalPertemuan = \App\Models\Attendance::where('student_id', $userId)
                         ->whereMonth('scan_time', $currentMonth)
                         ->whereYear('scan_time', $currentYear)
@@ -179,62 +180,67 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/classrooms/destroy-all', [ClassroomController::class, 'destroyAll'])->name('classrooms.destroyAll');
     Route::resource('classrooms', ClassroomController::class);
 
+    //mata pelajaran
     Route::resource('subjects', SubjectController::class);
     
-    
+    // manajemen user
     Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
     Route::resource('users', UserController::class);
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
     
+    // manajemen jadwal
     Route::resource('schedules', ScheduleController::class);
     Route::get('schedules/classroom/{classroom}', [ScheduleController::class, 'classroomShow'])->name('schedules.classroom.show');
 
+    // manajemen cuti
     Route::resource('leaves', LeaveRequestController::class);
 
+    // manajemen homeroom
     Route::get('/homeroom', [HomeroomController::class, 'index'])->name('homeroom.index');
     Route::post('/homeroom/leave/{id}', [HomeroomController::class, 'updateStatus'])->name('homeroom.update');
 
-    // Route Manajemen Tahun Ajaran
+    // Manajemen Tahun Ajaran
     Route::resource('academic-years', AcademicYearController::class);
     Route::post('academic-years/{id}/set-active', [AcademicYearController::class, 'setActive'])->name('academic-years.set-active');
 
-    // Route Promosi Siswa
+    // Promosi Siswa (GA KEPAKE)
     Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
     Route::post('/promotions', [PromotionController::class, 'process'])->name('promotions.process');
     Route::get('/api/students/{classroomId}', [PromotionController::class, 'getStudents']);
   
-    // Route Laporan
+    // Laporan
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
 
+    // untuk regenerate QR Code
     Route::post('/meetings/{id}/regenerate', [MeetingController::class, 'regenerateQr'])->name('meetings.regenerate');
 
-    // Route Monitoring Guru
+    // Monitoring Guru
     Route::get('/monitoring', [MonitoringController::class, 'index'])->name('monitoring.index');
 
-    // Route untuk memanggil Guru Piket
+    // untuk memanggil Guru Piket
     Route::post('/monitoring/{id}/panggil', [MonitoringController::class, 'panggilPiket'])->name('monitoring.panggil');
 
-    // Route Khusus Kepala Sekolah
+    // Khusus Kepala Sekolah
     Route::get('/headmaster/leaves', [HeadmasterController::class, 'index'])->name('headmaster.index');
     Route::post('/headmaster/leaves/{id}', [HeadmasterController::class, 'updateStatus'])->name('headmaster.update');
 
-    // Route untuk delete all users (HATI-HATI)
+    // untuk delete all users (HATI-HATI)
     Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
 
-      // Route Libur
+    // Libur
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
     Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
     Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
     
-    // Route Khusus Sync API
+    // Khusus Sync API LIBUR NASIONAL
     Route::post('/holidays/sync', [HolidayController::class, 'syncNational'])->name('holidays.sync');
     Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
 
-    // Route Kalender Libur
+    // Kalender Libur
     Route::get('/calendar', [\App\Http\Controllers\HolidayController::class, 'calendar'])->name('calendar.index');
 
-    // =================== ROUTE SINKRONISASI ===================
+    // ROUTE SINKRONISASI API USER & KELAS
     Route::prefix('sync')->group(function () {
         // Halaman utama sinkronisasi
         Route::get('/', [ApiSyncController::class, 'index'])->name('sync.index');
@@ -251,14 +257,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Debug API
         Route::get('/debug', [ApiSyncController::class, 'debugApi'])->name('sync.debug');
     });
-    // =================== END ROUTE SINKRONISASI ===================
+    //END ROUTE SINKRONISASI
 
     // ROUTE PROFILE (Bawaan Breeze)
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
     Route::post('/sync/quick', [ApiSyncController::class, 'quickSync'])->name('sync.quick');
 });
 
+// Route untuk testing
 require __DIR__.'/auth.php';

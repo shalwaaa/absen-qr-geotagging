@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Meeting;
 use App\Models\Schedule;
 use App\Models\Attendance;
-use App\Models\Holiday; // <-- Import Model Holiday
+use App\Models\Holiday; 
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +14,7 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class MeetingController extends Controller
 {
-    // --- HELPER CEK LIBUR ---
+    // Cek Libur (Weekend + Database)
     private function checkHoliday()
     {
         Carbon::setLocale('id');
@@ -56,16 +56,15 @@ class MeetingController extends Controller
         Carbon::setLocale('id');
         $today = Carbon::now('Asia/Jakarta')->isoFormat('dddd');
 
-        // ==========================================
         // 2. LOGIKA MINGGU GANJIL/GENAP (PERBAIKAN)
-        // ==========================================
+
         // Ambil nomor minggu saat ini (1 s.d 52)
         $weekNumber = Carbon::now('Asia/Jakarta')->weekOfYear; 
         
-        // Tentukan ini minggu genap atau ganjil
+        // Tentukan tipe minggu: 'even' untuk genap, 'odd' untuk ganjil
         $currentWeekType = ($weekNumber % 2 == 0) ? 'even' : 'odd';
         
-        // Buat string info untuk dikirim ke View (misal: "Minggu Genap")
+        // Buat variabel untuk menampilkan info minggu di dashboard
         $weekInfo = ($currentWeekType == 'odd') ? 'Minggu Ganjil' : 'Minggu Genap';
         // ==========================================
 
@@ -73,7 +72,6 @@ class MeetingController extends Controller
         $schedules = Schedule::with(['subject', 'classroom'])
             ->where('teacher_id', Auth::id())
             ->where('day', $today)
-            // FILTER: Hanya ambil jadwal yang tipenya 'all' ATAU sesuai minggu sekarang
             ->whereIn('week_type', ['all', $currentWeekType]) 
             ->orderBy('start_time')
             ->get();
@@ -110,7 +108,7 @@ class MeetingController extends Controller
         // Ambil SEMUA jadwal hari ini yang sesuai tipe minggu
         $schedules = Schedule::with(['teacher', 'subject', 'classroom'])
             ->where('day', $today)
-            ->whereIn('week_type', ['all', $currentWeekType]) // Filter minggu
+            ->whereIn('week_type', ['all', $currentWeekType]) 
             ->orderBy('start_time')
             ->get();
 
@@ -123,7 +121,6 @@ class MeetingController extends Controller
         return view('teacher.piket', compact('schedules', 'today', 'weekInfo'));
     }
 
-    // ... (Sisa method store, show, toggle, regenerate biarkan sama) ...
     public function store(Request $request)
     {
         $request->validate(['schedule_id' => 'required|exists:schedules,id']);
@@ -135,6 +132,7 @@ class MeetingController extends Controller
         $openerId = Auth::id();
         $schedule = Schedule::with('classroom')->findOrFail($request->schedule_id);
 
+        // Pastikan yang membuka adalah guru yang bersangkutan atau admin
         if ($meeting) {
             $meeting->update([
                 'is_active' => true,
@@ -142,6 +140,7 @@ class MeetingController extends Controller
                 'qr_token' => $meeting->qr_token ?? Str::random(40) 
             ]);
         } else {
+            // Buat meeting baru jika belum ada untuk hari ini
             $meeting = Meeting::create([
                 'schedule_id' => $request->schedule_id,
                 'date' => Carbon::today(),
@@ -151,10 +150,12 @@ class MeetingController extends Controller
             ]);
         }
 
+        // Pastikan guru yang membuka juga tercatat hadir (untuk keperluan rekap)
         $guruHadir = Attendance::where('meeting_id', $meeting->id)
                                ->where('student_id', $openerId)
                                ->exists();
 
+        // Jika belum tercatat hadir, buat record kehadiran untuk guru tersebut
         if (!$guruHadir) {
             Attendance::create([
                 'meeting_id' => $meeting->id,
@@ -172,11 +173,13 @@ class MeetingController extends Controller
 
     public function show($id)
     {
+        // Ambil data meeting beserta relasi yang diperlukan
         $meeting = Meeting::with(['schedule.subject', 'schedule.classroom', 'attendances.student', 'opener'])
                           ->findOrFail($id);
         
         $user = Auth::user();
-        
+
+        // Pastikan hanya guru yang membuka, guru yang bersangkutan, atau admin yang bisa melihat detail meeting
         if ($meeting->schedule->teacher_id != $user->id && $user->role != 'admin' && $meeting->opened_by != $user->id) {
             abort(403, 'Anda tidak memiliki akses ke sesi ini.');
         }
@@ -184,6 +187,7 @@ class MeetingController extends Controller
         return view('teacher.meeting_show', compact('meeting'));
     }
 
+    // Fitur tambahan: Toggle Status Aktif Meeting
     public function toggleStatus($id)
     {
         $meeting = Meeting::findOrFail($id);
@@ -192,6 +196,7 @@ class MeetingController extends Controller
         return back();
     }
 
+    // Fitur tambahan: Regenerate QR Code (dynamic QR)
     public function regenerateQr($id)
     {
         $meeting = Meeting::findOrFail($id);

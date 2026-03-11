@@ -14,10 +14,11 @@ class MonitoringController extends Controller
 {
     public function index(Request $request)
     {
+        // Cek Libur (Weekend + Database)
         Carbon::setLocale('id');
         $now = Carbon::now('Asia/Jakarta');
         
-        // 1. CEK WEEKEND (SABTU & MINGGU)
+        // CEK WEEKEND (SABTU & MINGGU)
         if ($now->isWeekend()) {
             return view('admin.monitoring.holiday', [
                 'reason' => 'Libur Akhir Pekan (' . $now->isoFormat('dddd') . ')',
@@ -26,7 +27,7 @@ class MonitoringController extends Controller
             ]);
         }
 
-        // 2. CEK LIBUR NASIONAL / MANUAL
+        // CEK LIBUR NASIONAL / MANUAL
         $holiday = Holiday::whereDate('date', $now->toDateString())->first();
         if ($holiday) {
             return view('admin.monitoring.holiday', [
@@ -42,6 +43,7 @@ class MonitoringController extends Controller
         $query = Schedule::with(['teacher', 'subject', 'classroom'])
             ->where('day', $todayName);
 
+            // Filter berdasarkan pencarian guru atau mata pelajaran
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('teacher', fn ($t) => $t->where('name', 'like', "%{$search}%"))
@@ -73,11 +75,14 @@ class MonitoringController extends Controller
 
             $status = ''; $badgeClass = ''; $keterangan = ''; $isUrgent = false;
 
+            // LOGIKA STATUS
             if ($meeting) {
                 $studentCount = $meeting->attendances()
                     ->whereHas('student', fn($q) => $q->where('role', 'student'))
                     ->count();
 
+                    // Jika guru membuka sesi tapi tidak ada siswa yang hadir, tampilkan status "Sesi Kosong" 
+                    //dengan badge kuning dan animasi pulse untuk menarik perhatian
                 if ($studentCount > 0) {
                     if ($meeting->opened_by == $schedule->teacher_id) {
                         $status = 'Hadir';
@@ -95,12 +100,14 @@ class MonitoringController extends Controller
                     $isUrgent = true; // Urgent cek kenapa kosong
                 }
 
+                // Jika sudah ada meeting, override status jadi "Sesi Kosong" jika tidak ada siswa yang hadir
             } elseif ($leave) {
                 $status = ($leave->type == 'sick') ? 'Sakit' : 'Izin';
                 $badgeClass = 'bg-purple-100 text-purple-700 border-purple-200';
                 $keterangan = 'Guru berhalangan (' . Str::limit($leave->reason, 20) . ')';
                 $isUrgent = true; // Perlu piket
 
+                // cek interaksi guru
             } else {
                 if ($now < $start) {
                     $status = 'Menunggu';
@@ -131,8 +138,9 @@ class MonitoringController extends Controller
             ];
         });
 
-        // ===== LOGIKA PENGURUTAN BARU (SORTING) =====
+        // URUTAN PRIORITAS STATUS
         $monitoringData = $monitoringData->sort(function ($a, $b) {
+
             // Angka lebih KECIL = Posisi lebih ATAS
             // Angka lebih BESAR = Posisi lebih BAWAH
             
@@ -165,10 +173,15 @@ class MonitoringController extends Controller
         });
 
         // MANUAL PAGINATION UNTUK COLLECTION
+        //kena manual pagination? karena kalau yang biasa menggunakan paginate() akan error karena kita sudah memanipulasi data 
+        //menggunakan map() dan sort() yang menghasilkan Collection, bukan Query Builder lagi. Jadi kita buat pagination manual
+        // untuk Collection hasil manipulasi tersebut.
+
         $perPage = 10;
         $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
         $paginatedItems = $monitoringData->slice(($page - 1) * $perPage, $perPage)->values();
         
+        // Buat paginator manual
         $paginatedMonitoringData = new \Illuminate\Pagination\LengthAwarePaginator(
             $paginatedItems,
             $monitoringData->count(),
@@ -177,12 +190,13 @@ class MonitoringController extends Controller
         );
 
         return view('admin.monitoring.index',[
-            'monitoringData' => $paginatedMonitoringData, // <--- Gunakan yang sudah dipaginate
+            'monitoringData' => $paginatedMonitoringData, 
             'today' => $todayName,
             'search' => $search,
         ]);
     }
 
+    // Fitur tambahan: Toggle Status Panggil Piket
     public function panggilPiket($id)
     {
         $schedule = Schedule::findOrFail($id);

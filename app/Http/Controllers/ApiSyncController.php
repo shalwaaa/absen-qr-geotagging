@@ -15,11 +15,11 @@ use App\Models\ClassMember;
 class ApiSyncController extends Controller
 {
     private const BATCH_SIZE = 100;
-    
+    // Endpoint utama untuk menampilkan halaman sync dan memulai proses sinkronisasi
     public function index()
     {
         try {
-            // Buat tahun ajaran dengan format Indonesia (2023/2024, 2024/2025)
+            // Buat tahun ajaran dengan format Indonesia 
             $currentYear = date('Y');
             $yearsToCreate = [];
             
@@ -28,12 +28,13 @@ class ApiSyncController extends Controller
                 $yearName = "{$y}/" . ($y + 1);
                 $yearsToCreate[] = [
                     'name' => $yearName,
-                    'start_date' => $y . '-07-01', // Juli
-                    'end_date' => ($y + 1) . '-06-30', // Juni tahun berikutnya
+                    'start_date' => $y . '-07-01',
+                    'end_date' => ($y + 1) . '-06-30', 
                     'is_active' => false
                 ];
             }
             
+            // Buat tahun ajaran jika belum ada (next year)
             foreach ($yearsToCreate as $yearData) {
                 AcademicYear::firstOrCreate(
                     ['name' => $yearData['name']],
@@ -41,9 +42,11 @@ class ApiSyncController extends Controller
                 );
             }
             
+            // Ambil semua tahun ajaran untuk dropdown
             $years = AcademicYear::orderBy('name', 'desc')->get();
             return view('admin.sync.index', compact('years'));
             
+            // Catatan: Proses sinkronisasi utama akan dipanggil melalui AJAX ke method sync()
         } catch (\Exception $e) {
             Log::error('SYNC INDEX ERROR: ' . $e->getMessage());
             return back()->with('error', 'Gagal memuat halaman: ' . $e->getMessage());
@@ -51,7 +54,7 @@ class ApiSyncController extends Controller
     }
     
     /**
-     * Main Sync Process - Dipanggil dari AJAX
+     * 
      */
     public function sync(Request $request)
     {
@@ -91,6 +94,8 @@ class ApiSyncController extends Controller
             
             return response()->json($siswaResult);
             
+            // Catatan: Setiap step memiliki validasi error yang ketat, jika ada error di salah satu step,
+            // proses akan berhenti dan mengembalikan pesan error yang jelas.
         } catch (\Exception $e) {
             Log::error('MAIN SYNC ERROR: ' . $e->getMessage());
             return response()->json([
@@ -100,8 +105,10 @@ class ApiSyncController extends Controller
         }
     }
     
+    // Endpoint untuk quick sync yang hanya membutuhkan tahun ajaran aktif
     public function quickSync(Request $request)
     {
+        // Cek tahun ajaran aktif
         try {
             $academicYear = AcademicYear::where('is_active', true)->first();
             
@@ -112,11 +119,13 @@ class ApiSyncController extends Controller
                 ], 400);
             }
             
+            // Konversi format tahun untuk API
             $apiYear = $this->extractApiYear($academicYear->name);
             
             // Langsung jalankan sync siswa
             return $this->syncSiswa($apiYear, $academicYear->id);
             
+            // Catatan: Quick sync ini hanya untuk sinkronisasi siswa dengan tahun ajaran aktif, tanpa perlu memilih tahun.
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -130,37 +139,47 @@ class ApiSyncController extends Controller
      */
     private function syncGuru(string $apiYear)
     {
+        // Log untuk menandai mulai sync guru
         Log::info("🔄 Sync Guru untuk tahun: {$apiYear}");
         
+        // Validasi input tahun
         try {
+            // Cek format tahun (harus 4 digit atau format tahun ajaran)
             $response = Http::timeout(60)
                 ->get("https://zieapi.zielabs.id/api/getguru", ['tahun' => $apiYear]);
             
+            // Validasi status response HTTP
             if (!$response->successful()) {
                 throw new \Exception("API Guru gagal: " . $response->status());
             }
             
+            // Validasi format data dan pesan error dari API
             $data = $response->json();
             
-            // Validasi response API
+            // Validasi response API untuk status false
             if (isset($data['status']) && $data['status'] === false) {
                 throw new \Exception("API Guru error: " . ($data['message'] ?? 'Data tidak ditemukan'));
             }
             
+            // Validasi pesan error yang mengandung "tidak ditemukan"
             if (isset($data['message']) && strpos(strtolower($data['message']), 'tidak ditemukan') !== false) {
                 throw new \Exception("API Guru: " . $data['message']);
             }
             
+            // LOG RESPONSE UNTUK DEBUG
             $teachers = $data['data'] ?? $data;
             $count = 0;
             
+            // Validasi struktur data guru
             if (is_array($teachers) && !empty($teachers)) {
                 foreach ($teachers as $teacher) {
                     if (empty($teacher['nama'])) continue;
                     
+                    // Cek berbagai kemungkinan key untuk NIP/NUPTK/ID
                     $nip = $teacher['nip'] ?? $teacher['nuptk'] ?? $teacher['id'] ?? 'guru_' . uniqid();
                     $nip = trim($nip);
                     
+                    // Jika NIP kosong, buat placeholder unik
                     if (empty($nip)) {
                         $nip = 'guru_' . uniqid();
                     }
@@ -183,14 +202,17 @@ class ApiSyncController extends Controller
                     $count++;
                 }
                 
+                // Log jumlah guru yang berhasil disinkronisasi
                 Log::info("✓ Guru: {$count} data");
                 
+                // Kembalikan hasil sukses dengan jumlah guru yang disinkronisasi
                 return [
                     'success' => true,
                     'progress' => 33,
                     'message' => "Guru berhasil: {$count} data",
                     'step' => 'kelas'
                 ];
+                // Catatan: Jika API guru tidak memiliki data, tetap lanjut ke step berikutnya, tapi dengan pesan bahwa tidak ada data guru.
             } else {
                 Log::warning("Data guru kosong untuk tahun {$apiYear}");
                 return [
@@ -200,7 +222,7 @@ class ApiSyncController extends Controller
                     'step' => 'kelas'
                 ];
             }
-            
+            //sych guru error
         } catch (\Exception $e) {
             Log::error('GURU SYNC ERROR: ' . $e->getMessage());
             throw $e;
@@ -212,17 +234,21 @@ class ApiSyncController extends Controller
      */
     private function syncKelas(string $apiYear)
     {
+        // Log untuk menandai mulai sync kelas
         Log::info("🔄 Sync Kelas untuk tahun: {$apiYear}");
         
+        // Validasi input tahun
         try {
             $response = Http::timeout(60)
                 ->get("https://zieapi.zielabs.id/api/getkelas", ['tahun' => $apiYear]);
             
+                // Validasi status response HTTP
             if (!$response->successful()) {
                 Log::error("API Kelas gagal: " . $response->status() . " - " . $response->body());
                 throw new \Exception("API Kelas gagal: " . $response->status());
             }
             
+            // Validasi format data dan pesan error dari API
             $data = $response->json();
             
             // Validasi response API
@@ -252,6 +278,7 @@ class ApiSyncController extends Controller
             
             $count = 0;
             
+            // Validasi struktur data kelas
             if (is_array($classes) && !empty($classes)) {
                 foreach ($classes as $index => $class) {
                     // LOG untuk debugging tiap kelas
@@ -260,6 +287,7 @@ class ApiSyncController extends Controller
                     // Coba berbagai kemungkinan key untuk nama kelas
                     $namaKelas = null;
                     
+                    // Cek berbagai kemungkinan key untuk nama kelas dengan prioritas yang lebih baik
                     if (isset($class['nama']) && !empty($class['nama'])) {
                         $namaKelas = $class['nama'];
                     } elseif (isset($class['nama_kelas']) && !empty($class['nama_kelas'])) {
@@ -272,17 +300,20 @@ class ApiSyncController extends Controller
                         $namaKelas = $class['rombel'];
                     }
                     
+                    // Jika nama kelas masih kosong, skip dan log warning
                     if (empty($namaKelas)) {
                         Log::warning("Nama kelas kosong untuk data: " . json_encode($class));
                         continue;
                     }
                     
+                    // Normalisasi nama kelas untuk konsistensi
                     $nama = strtoupper(trim($namaKelas));
                     Log::info("Memproses kelas: {$nama}");
                     
                     // Detect grade level dari nama kelas
                     $gradeLevel = $this->detectGradeLevel($nama);
                     
+                    // Update atau create kelas dengan data yang lebih lengkap dengan validasi gps default
                     Classroom::updateOrCreate(
                         ['name' => $nama],
                         [
@@ -306,12 +337,14 @@ class ApiSyncController extends Controller
                 
                 Log::info("✓ Kelas: {$count} data berhasil disinkronisasi");
                 
+                // Kembalikan hasil sukses dengan jumlah kelas yang disinkronisasi
                 return [
                     'success' => true,
                     'progress' => 66,
                     'message' => "Kelas berhasil: {$count} data",
                     'step' => 'siswa'
                 ];
+                // Catatan: Jika API kelas tidak memiliki data, tetap lanjut ke step berikutnya, tapi dengan pesan bahwa tidak ada data kelas.
             } else {
                 Log::warning("Data kelas kosong atau bukan array untuk tahun {$apiYear}");
                 return [
@@ -333,6 +366,7 @@ class ApiSyncController extends Controller
      */
     private function syncSiswa(string $apiYear, int $academicYearId)
     {
+        // Log untuk menandai mulai sync siswa
         Log::info("🔄 Sync Siswa untuk tahun: {$apiYear}, Academic Year ID: {$academicYearId}");
         
         try {
@@ -341,38 +375,44 @@ class ApiSyncController extends Controller
                 return [strtoupper(trim($key)) => $item];
             })->toArray();
             
+            // Log mapping kelas untuk debugging
             Log::info("Class map: " . json_encode($classMap));
             
+            // Inisialisasi counter untuk siswa yang berhasil disinkronisasi
             $studentCount = 0;
             $totalProcessed = 0;
             
             // Nonaktifkan siswa lama untuk tahun ajaran ini
             ClassMember::where('academic_year_id', $academicYearId)
                       ->update(['is_active' => false]);
-            
+            // Log untuk menandai siswa lama yang dinonaktifkan
             $page = 1;
             $hasMore = true;
             $maxPages = 10; // Batasi halaman untuk efisiensi
             
             Log::info("Memulai sinkronisasi siswa...");
             
+            // Loop untuk mengambil data siswa dengan pagination, dengan validasi error yang lebih baik
             while ($hasMore && $page <= $maxPages) {
                 Log::info("📄 Mengambil data siswa halaman: {$page}");
                 
+                // Validasi input tahun
                 try {
                     $response = Http::timeout(60)->get('https://zieapi.zielabs.id/api/getsiswa', [
                         'tahun' => $apiYear,
                         'page' => $page
                     ]);
                     
+                    // Validasi status response HTTP
                     if (!$response->successful()) {
                         Log::warning("Siswa page {$page} gagal: " . $response->status() . " - " . $response->body());
                         break;
                     }
-                    
+                   
+                    // Validasi format data dan pesan error dari API
                     $data = $response->json();
                     
-                    // Validasi response API - PERBAIKAN DISINI
+                    // Validasi response API
                     if (isset($data['status']) && $data['status'] === false) {
                         Log::error("API Siswa error: " . ($data['message'] ?? 'Data tidak ditemukan'));
                         $hasMore = false;
@@ -409,6 +449,7 @@ class ApiSyncController extends Controller
                     
                     Log::info("Memproses " . count($students) . " siswa di halaman {$page}");
                     
+                    // Proses setiap siswa dengan validasi data yang lebih ketat
                     foreach ($students as $index => $student) {
                         // Skip jika bukan array atau error message
                         if (!is_array($student) || isset($student['message'])) {
@@ -539,6 +580,7 @@ class ApiSyncController extends Controller
             
             Log::info("✓ Siswa: {$studentCount} dari {$totalProcessed} data berhasil disinkronisasi");
             
+            // Kembalikan hasil sukses dengan jumlah siswa yang disinkronisasi
             return [
                 'success' => true,
                 'progress' => 100,
@@ -560,11 +602,13 @@ class ApiSyncController extends Controller
      */
     private function generateEmail(string $name, string $identifier, string $domain): string
     {
+        // Bersihkan nama untuk email: hanya huruf kecil dan angka, tanpa spasi atau karakter khusus
         $cleanName = strtolower(preg_replace('/[^a-z]/', '', $name));
         if (empty($cleanName)) {
             $cleanName = 'user';
         }
         
+        // Batasi panjang nama untuk email agar tidak terlalu panjang
         $baseEmail = substr($cleanName, 0, 10) . '.' . $identifier . '@' . $domain;
         $baseEmail = str_replace([' ', '@@', '..'], ['', '@', '.'], $baseEmail);
         

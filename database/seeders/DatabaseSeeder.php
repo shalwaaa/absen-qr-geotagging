@@ -55,5 +55,14 @@ class DatabaseSeeder extends Seeder
                 'status' => 'active'
             ]
         );
+
+        // --- DUMMY KATEGORI & PERTANYAAN ---
+        $cat1 = \App\Models\AssessmentCategory::firstOrCreate(['name' => 'Kedisiplinan']);
+        \App\Models\AssessmentQuestion::firstOrCreate(['category_id' => $cat1->id, 'question' => 'Siswa hadir di kelas tepat waktu.']);
+        \App\Models\AssessmentQuestion::firstOrCreate(['category_id' => $cat1->id, 'question' => 'Siswa memakai seragam lengkap dan rapi.']);
+
+        $cat2 = \App\Models\AssessmentCategory::firstOrCreate(['name' => 'Sikap & Karakter']);
+        \App\Models\AssessmentQuestion::firstOrCreate(['category_id' => $cat2->id, 'question' => 'Siswa berbicara sopan kepada guru.']);
+        \App\Models\AssessmentQuestion::firstOrCreate(['category_id' => $cat2->id, 'question' => 'Siswa aktif berpartisipasi dalam diskusi kelas.']);
     }
 }

@@ -61,8 +61,15 @@ class User extends Authenticatable
         return $this->hasMany(ClassMember::class, 'student_id');
     }
 
+    // 3. Relasi ke Jadwal Mengajar (Untuk Guru)
        public function schedules()
     {
         return $this->hasMany(Schedule::class, 'teacher_id');
+    }
+
+    // 4. Relasi untuk Siswa melihat nilai mereka sendiri
+    public function myAssessments()
+    {
+        return $this->hasMany(Assessment::class, 'evaluatee_id');
     }
 }

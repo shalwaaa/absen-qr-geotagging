@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\ApiSyncController;
+use App\Http\Controllers\AssessmentCategoryController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
@@ -17,7 +18,9 @@ use App\Http\Controllers\MonitoringController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
+use App\Http\Controllers\StudentAssessmentController;
 use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\TeacherAssessmentController;
 use App\Http\Controllers\UserController;
 
 use App\Models\User;
@@ -175,6 +178,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ROUTE KHUSUS SISWA
     Route::get('/scan', [AttendanceController::class, 'index'])->name('attendance.scan');
     Route::post('/attendance', [AttendanceController::class, 'store'])->name('attendance.store');
+    // Route Penilaian (Rapor Karakter) Siswa
+    Route::get('/my-character', [StudentAssessmentController::class, 'index'])->name('student.assessments');
 
     // ROUTE KHUSUS ADMIN (RESOURCES)
     Route::delete('/classrooms/destroy-all', [ClassroomController::class, 'destroyAll'])->name('classrooms.destroyAll');
@@ -198,10 +203,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // manajemen homeroom
     Route::get('/homeroom', [HomeroomController::class, 'index'])->name('homeroom.index');
     Route::post('/homeroom/leave/{id}', [HomeroomController::class, 'updateStatus'])->name('homeroom.update');
-
-    // Manajemen Tahun Ajaran
-    Route::resource('academic-years', AcademicYearController::class);
-    Route::post('academic-years/{id}/set-active', [AcademicYearController::class, 'setActive'])->name('academic-years.set-active');
+    // manajemen penilaian sikap
+    Route::get('/homeroom/assessments',[TeacherAssessmentController::class, 'index'])->name('teacher.assessments.index');
+    Route::post('/homeroom/assessments', [TeacherAssessmentController::class, 'store'])->name('teacher.assessments.store');
+    Route::delete('/homeroom/assessments/{id}',[TeacherAssessmentController::class, 'destroy'])->name('teacher.assessments.destroy');
+    Route::get('/homeroom/assessments/print', [TeacherAssessmentController::class, 'printReport'])->name('teacher.assessments.print');
+    Route::delete('/assessment-categories/{id}', [AssessmentCategoryController::class, 'destroy'])->name('assessment-categories.destroy');
+    Route::delete('/assessment-categories/{assessment_category}', [AssessmentCategoryController::class, 'destroy'])->name('assessment-categories.destroy');
+    Route::post('/assessment-questions',[\App\Http\Controllers\AssessmentCategoryController::class, 'storeQuestion'])->name('assessment-questions.store');
+    Route::delete('/assessment-questions/{id}', [\App\Http\Controllers\AssessmentCategoryController::class, 'destroyQuestion'])->name('assessment-questions.destroy');
+    // Route Manajemen Tahun Ajaran
+    Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
+    Route::post('/academic-years/{id}/set-active', [AcademicYearController::class, 'setActive'])->name('academic-years.set-active');
 
     // Promosi Siswa (GA KEPAKE)
     Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
@@ -264,6 +277,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::post('/sync/quick', [ApiSyncController::class, 'quickSync'])->name('sync.quick');
+
+    ////////////////////////////////////////////////////////////////////
+    //ROUTE BARU
+    ///////////////////////////////////////////////////////////////////
+
+    // Route Manajemen Kategori Penilaian Sikap
+    Route::get('/assessment-categories',[AssessmentCategoryController::class, 'index'])->name('assessment-categories.index');
+    Route::post('/assessment-categories', [AssessmentCategoryController::class, 'store'])->name('assessment-categories.store');
+    Route::put('/assessment-categories/{id}',[AssessmentCategoryController::class, 'update'])->name('assessment-categories.update');
+    Route::post('/assessment-categories/{id}/toggle', [AssessmentCategoryController::class, 'toggleStatus'])->name('assessment-categories.toggle');
+    
 });
 
 // Route untuk testing

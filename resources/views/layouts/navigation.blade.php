@@ -246,6 +246,10 @@
             <a href="{{ route('monitoring.index') }}" class="sidebar-link {{ request()->routeIs('monitoring.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-tower-broadcast"></i> Monitoring Guru
             </a>
+
+            <a href="{{ route('assessment-categories.index') }}" class="sidebar-link {{ request()->routeIs('assessment-categories.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-list-check"></i> Kategori Penilaian
+            </a>
             
             <a href="{{ route('classrooms.index') }}" class="sidebar-link {{ request()->routeIs('classrooms.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-school"></i> Kelas & Lokasi
@@ -257,6 +261,10 @@
 
             <a href="{{ route('schedules.index') }}" class="sidebar-link {{ request()->routeIs('schedules.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-calendar-days"></i> Jadwal Pelajaran
+            </a>
+
+            <a href="{{ route('academic-years.index') }}" class="sidebar-link {{ request()->routeIs('academic-years.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-calendar-check"></i> Tahun Ajaran
             </a>
 
             <!-- MENU APPROVAL UNTUK ADMIN -->
@@ -316,6 +324,10 @@
                 <a href="{{ route('headmaster.index') }}" class="sidebar-link {{ request()->routeIs('headmaster.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-user-tie"></i> Validasi Izin Guru
                 </a>
+
+                <a href="{{ route('assessment-categories.index') }}" class="sidebar-link {{ request()->routeIs('assessment-categories.*') ? 'active' : '' }}">
+                    <i class="fa-solid fa-list-check"></i> Kategori Penilaian
+                </a>
             @endif
 
             <!-- Menu Kalender Libur -->
@@ -341,6 +353,11 @@
             <div class="sidebar-section">Sistem</div>
             <a href="{{ route('calendar.index') }}" class="sidebar-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
                 <i class="fa-regular fa-calendar-days"></i> Kalender Libur
+            </a>
+
+            <div class="sidebar-section">Laporan</div>
+            <a href="{{ route('student.assessments') }}" class="sidebar-link {{ request()->routeIs('student.assessments') ? 'active' : '' }}">
+                <i class="fa-solid fa-chart-line"></i> Rapor Karakter
             </a>
         @endif
     </nav>

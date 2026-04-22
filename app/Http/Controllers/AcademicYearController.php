@@ -4,71 +4,44 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
+// Tambahkan dua import ini untuk Laravel 11
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-
-//GA KEPAKE!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-class AcademicYearController extends Controller
+// Tambahkan "implements HasMiddleware"
+class AcademicYearController extends Controller implements HasMiddleware
 {
+    /**
+     * Tentukan middleware untuk controller ini (Cara Laravel 11)
+     */
+    public static function middleware(): array
+    {
+        return[
+            new Middleware(function ($request, $next) {
+                if (auth()->user()->role !== 'admin') {
+                    abort(403, 'Akses Ditolak. Halaman ini khusus Admin.');
+                }
+                return $next($request);
+            }),
+        ];
+    }
+
     public function index()
     {
-        $years = AcademicYear::orderBy('start_date', 'desc')->get();
+        // Ambil semua tahun, urutkan dari yang terbaru
+        $years = AcademicYear::orderBy('name', 'desc')->paginate(10);
         return view('admin.academic_years.index', compact('years'));
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:50', 
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-        ]);
-
-        // Cek apakah ini data pertama? Jika iya, otomatis aktif
-        $isActive = AcademicYear::count() === 0 ? true : false;
-
-        AcademicYear::create([
-            'name' => $request->name,
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'is_active' => $isActive
-        ]);
-
-        return back()->with('success', 'Tahun ajaran berhasil dibuat!');
-    }
-
-    public function update(Request $request, AcademicYear $academicYear)
-    {
-        $request->validate([
-            'name' => 'required|string|max:50',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after:start_date',
-        ]);
-
-        $academicYear->update($request->all());
-
-        return back()->with('success', 'Data diperbarui!');
-    }
-
-    // Fitur Penting: Set Aktif
     public function setActive($id)
     {
-        // 1. Non-aktifkan SEMUA tahun ajaran
+        // 1. Nonaktifkan SEMUA tahun ajaran
         AcademicYear::query()->update(['is_active' => false]);
 
-        // 2. Aktifkan tahun yang dipilih
+        // 2. Aktifkan HANYA tahun yang dipilih
         $year = AcademicYear::findOrFail($id);
         $year->update(['is_active' => true]);
 
         return back()->with('success', 'Tahun Ajaran ' . $year->name . ' sekarang AKTIF.');
-    }
-
-    public function destroy(AcademicYear $academicYear)
-    {
-        if ($academicYear->is_active) {
-            return back()->with('error', 'Tidak bisa menghapus tahun ajaran yang sedang aktif!');
-        }
-        $academicYear->delete();
-        return back()->with('success', 'Data dihapus.');
     }
 }

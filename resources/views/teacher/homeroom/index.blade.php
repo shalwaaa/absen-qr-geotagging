@@ -90,6 +90,29 @@
                 
                 <!-- KOLOM KIRI (UTAMA): DAFTAR PENGAJUAN & RIWAYAT -->
                 <div class="lg:col-span-2 space-y-8">
+                    <div class="mb-8">
+                        <a href="{{ route('teacher.assessments.index') }}" class="block w-full bg-gradient-to-r from-[var(--cal-poly)] to-[var(--fern)] text-white p-5 rounded-2xl shadow-lg transition hover:scale-[1.01]" style="background-color: #2D5128; color: #E4EB9C;">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl">
+                                        <i class="fa-solid fa-star"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-black text-xl">Evaluasi Karakter Siswa</h3>
+                                        <p class="text-sm text-white/80">Berikan penilaian bulanan untuk kelas Anda</p>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-arrow-right text-xl opacity-50"></i>
+                            </div>
+                        </a>
+                    </div>
+
+                                @if(session('error'))
+                                    <div class="mb-6 p-4 bg-red-100 text-red-800 rounded-xl text-sm font-bold border border-red-200 flex items-center gap-3">
+                                        <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                                        {{ session('error') }}
+                                    </div>
+                                @endif
                     
                     <!-- 1. PENGAJUAN BARU (PRIORITAS) -->
                     <div>

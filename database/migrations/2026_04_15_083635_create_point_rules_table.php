@@ -1,0 +1,37 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up()
+    {
+        Schema::create('point_rules', function (Blueprint $table) {
+            $table->id();
+            $table->string('rule_name'); 
+            $table->enum('target_role',['student', 'teacher', 'all'])->default('student');
+            
+            // Tipe kondisi: check_in_time (Jam Masuk), status (Hadir/Telat/Sakit)
+            $table->string('condition_type'); 
+            $table->enum('condition_operator', ['<', '>', '=', '<=', '>='])->nullable();
+            $table->string('condition_value')->nullable(); 
+            
+            $table->integer('point_modifier'); 
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('point_rules');
+    }
+};

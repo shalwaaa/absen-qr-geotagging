@@ -1,5 +1,14 @@
 <x-app-layout>
-    <x-slot name="header"></x-slot>
+    <x-slot name="header">
+        <div class="flex items-center justify-between header-section">
+            <div>
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight">
+                    <span style="color: #E4EB9C; font-weight: 800;">Manajemen Kategori & Pertanyaan</span>
+                </h2>
+                <p style="color: #E4EB9C">Atur indikator karakter beserta pertanyaan detail untuk form penilaian Wali Kelas.</p>
+            </div>
+        </div>
+    </x-slot>
 
     <style>
         :root { --dark-green: #142C14; --cal-poly: #2D5128; --fern: #537B2F; --asparagus: #8DA750; --mindaro: #E4EB9C; --cream: #FAFAF5; }
@@ -37,11 +46,6 @@
 
     <div class="py-10 px-4 bg-[#FDFDF9] min-h-screen">
         <div class="max-w-6xl mx-auto">
-
-            <div class="mb-8">
-                <h1 class="text-2xl font-black text-[#142C14]">Manajemen Kategori & Pertanyaan</h1>
-                <p class="text-gray-500">Atur indikator karakter beserta pertanyaan detail untuk form penilaian Wali Kelas.</p>
-            </div>
 
             @if(session('success'))
                 <div class="mb-6 p-4 bg-green-100 text-green-800 rounded-xl text-sm font-bold border border-green-200">

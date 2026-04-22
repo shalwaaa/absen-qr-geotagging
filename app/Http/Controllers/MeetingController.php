@@ -190,10 +190,56 @@ class MeetingController extends Controller
     // Fitur tambahan: Toggle Status Aktif Meeting
     public function toggleStatus($id)
     {
-        $meeting = Meeting::findOrFail($id);
+        $meeting = Meeting::with('schedule.classroom')->findOrFail($id);
+
+        // LOGIKA PENYAPUAN ALPHA (Hanya jalan saat sesi MAU DITUTUP)
+        // Jadi kalau is_active dari true (buka) mau diubah ke false (tutup)
+        if ($meeting->is_active) {
+            
+            $classroomId = $meeting->schedule->classroom_id;
+
+            // 1. Cari SEMUA siswa yang seharusnya ada di kelas ini
+            $allStudents = \App\Models\User::where('role', 'student')
+                                ->where('classroom_id', $classroomId)
+                                ->where('status', 'active')
+                                ->pluck('id')
+                                ->toArray();
+
+            // 2. Cari siswa yang SUDAH ABSEN di sesi ini (Hadir, Telat, Sakit, Izin)
+            $attendedStudents = \App\Models\Attendance::where('meeting_id', $meeting->id)
+                                ->pluck('student_id')
+                                ->toArray();
+
+            // 3. Cari selisihnya (Siapa yang ada di daftar kelas, tapi belum absen?)
+            // array_diff akan membandingkan array 1 dan array 2
+            $alphaStudents = array_diff($allStudents, $attendedStudents);
+
+            $now = \Carbon\Carbon::now('Asia/Jakarta');
+
+            // 4. Masukkan mereka yang hilang sebagai ALPHA
+            foreach ($alphaStudents as $studentId) {
+                // Saat create dipanggil, Observer otomatis jalan dan memotong -20 Poin!
+                \App\Models\Attendance::create([
+                    'meeting_id' => $meeting->id,
+                    'student_id' => $studentId,
+                    'status' => 'alpha',
+                    'latitude_student' => $meeting->schedule->classroom->latitude ?? 0,
+                    'longitude_student' => $meeting->schedule->classroom->longitude ?? 0,
+                    'distance_meters' => 0,
+                    'scan_time' => $now,
+                ]);
+            }
+            
+            $pesan = "Sesi ditutup! " . count($alphaStudents) . " siswa yang tidak hadir otomatis dicatat sebagai ALPHA.";
+        } else {
+            $pesan = "Sesi absensi kembali dibuka.";
+        }
+
+        // Toggle status aktif/tidak aktif
         $meeting->is_active = !$meeting->is_active;
         $meeting->save();
-        return back();
+
+        return back()->with('success', $pesan);
     }
 
     // Fitur tambahan: Regenerate QR Code (dynamic QR)

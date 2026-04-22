@@ -285,6 +285,10 @@
             <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-file-lines"></i> Laporan Kehadiran
             </a>
+
+            <a href="{{ route('gamification.index') }}" class="sidebar-link {{ request()->routeIs('gamification.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-gamepad"></i> Dompet Integritas
+            </a>
         @endif
 
         <!-- === MENU GURU === -->
@@ -343,6 +347,10 @@
             
             <a href="{{ route('attendance.scan') }}" class="sidebar-link {{ request()->routeIs('attendance.scan') ? 'active' : '' }}">
                 <i class="fa-solid fa-qrcode"></i> Scan Masuk
+            </a>
+
+            <a href="{{ route('student.wallet') }}" class="sidebar-link {{ request()->routeIs('student.wallet*') ? 'active' : '' }}">
+                <i class="fa-solid fa-wallet"></i> Dompet Integritas
             </a>
 
             <a href="{{ route('leaves.index') }}" class="sidebar-link {{ request()->routeIs('leaves.*') ? 'active' : '' }}">

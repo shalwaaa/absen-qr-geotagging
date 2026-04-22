@@ -8,7 +8,7 @@ use App\Models\AssessmentQuestion;
 
 class AssessmentCategoryController extends Controller
 {
-    // Fungsi bantuan untuk mengecek hak akses (Hanya Admin / Kepsek)
+    // Fungsi bantuan untuk mengecek hak akses (Hanya Admin / Kepsek) encapsulation
     private function checkAccess()
     {
         $user = auth()->user();
@@ -19,7 +19,8 @@ class AssessmentCategoryController extends Controller
 
     public function index()
     {
-        $this->checkAccess(); // Panggil pengecekan
+        // Cek akses terlebih dahulu || sncapsulation
+        $this->checkAccess(); 
 
         // Ambil semua kategori, urutkan dari yang terbaru
         $categories = AssessmentCategory::latest()->paginate(7);
@@ -28,6 +29,8 @@ class AssessmentCategoryController extends Controller
 
     public function store(Request $request)
     {
+        
+        
         $this->checkAccess();
 
         $request->validate([
@@ -35,6 +38,8 @@ class AssessmentCategoryController extends Controller
             'description' => 'nullable|string'
         ]);
 
+
+        // Simpan kategori baru ke database
         AssessmentCategory::create([
             'name' => $request->name,
             'description' => $request->description,
@@ -42,12 +47,14 @@ class AssessmentCategoryController extends Controller
         ]);
 
         return back()->with('success', 'Kategori Penilaian berhasil ditambahkan.');
+
     }
 
     public function update(Request $request, $id)
     {
         $this->checkAccess();
 
+        // Cari kategori yang akan diupdate
         $category = AssessmentCategory::findOrFail($id);
 
         $request->validate([
@@ -68,6 +75,7 @@ class AssessmentCategoryController extends Controller
     {
         $this->checkAccess();
 
+        // Cari kategori yang akan di-ubah status nya)
         $category = AssessmentCategory::findOrFail($id);
         $category->is_active = !$category->is_active;
         $category->save();
@@ -76,6 +84,7 @@ class AssessmentCategoryController extends Controller
         return back()->with('success', "Kategori Penilaian berhasil $status.");
     }
 
+    // Fungsi untuk menambahkan pertanyaan baru ke dalam kategori tertentu
     public function storeQuestion(Request $request)
     {
         $request->validate([
@@ -83,10 +92,10 @@ class AssessmentCategoryController extends Controller
             'category_id' => 'required|exists:assessment_categories,id'
         ]);
 
+        // Simpan pertanyaan baru ke database
         AssessmentQuestion::create([
-            'question' => $request->question,
-            'category_id' => $request->category_id,
-            'is_active' => true
+         'category_id' => $request->category_id,
+         'question' => $request->question
         ]);
 
         return redirect()->back()->with('success', 'Pertanyaan berhasil ditambahkan.');

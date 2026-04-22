@@ -4,6 +4,8 @@
         @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fadeInUp 0.4s ease-out; }
 
+        .badge-late { background: #fee2e2; color: #991b1b; padding: 6px 12px; border-radius: 8px; font-weight: 800; font-size: 11px; text-transform: uppercase; border: 1px solid #fecaca; display: inline-flex; align-items: center; gap: 4px; }
+
         /* Card Styling */
         .qr-card { background: white; border-radius: 20px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .list-card { background: white; border-radius: 20px; border: 1px solid #e2e8f0; padding: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); height: 100%; }
@@ -145,6 +147,9 @@
                                                 <td>
                                                     @if($attendance->status == 'present')
                                                         <span class="badge-present"><i class="fa-solid fa-check"></i> Hadir</span>
+                                                    @elseif($attendance->status == 'late')
+                                                        <!-- TAMBAHKAN INI -->
+                                                        <span class="badge-late"><i class="fa-solid fa-clock"></i> Terlambat</span>
                                                     @elseif($attendance->status == 'sick')
                                                         <span class="badge-sick"><i class="fa-solid fa-notes-medical"></i> Sakit</span>
                                                     @elseif($attendance->status == 'permission')

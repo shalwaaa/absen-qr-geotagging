@@ -64,18 +64,6 @@
 
     <div class="py-10 px-4 sm:px-6 lg:px-8 bg-[#FDFDF9] min-h-screen">
         <div class="max-w-7xl mx-auto">
-            
-            <!-- BANNER -->
-            <div class="header-banner">
-                <div class="relative z-10">
-                    <p class="text-[var(--mindaro)] font-bold tracking-widest text-sm uppercase mb-1">Rapor Karakter</p>
-                    <h1 class="text-3xl font-black">Evaluasi Sikap & Performa</h1>
-                    <p class="text-white/80 mt-2">Lihat grafik perkembangan karaktermu berdasarkan penilaian Wali Kelas.</p>
-                </div>
-                <div class="hidden md:flex w-16 h-16 bg-white/20 rounded-2xl items-center justify-center text-3xl backdrop-blur-sm z-10">
-                    <i class="fa-solid fa-chart-radar"></i>
-                </div>
-            </div>
 
             @if($assessments->isEmpty())
                 <div class="text-center py-20 bg-white rounded-[24px] border border-dashed border-gray-300">

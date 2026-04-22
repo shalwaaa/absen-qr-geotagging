@@ -13,7 +13,6 @@ class StudentAssessmentController extends Controller
         $studentId = Auth::id();
 
         // 1. Ambil semua riwayat penilaian siswa ini, urutkan dari yang terbaru
-        // PERBAIKAN: Ubah 'details.category' menjadi 'details.question.category'
         $assessments = Assessment::where('evaluatee_id', $studentId)
                         ->with(['evaluator', 'details.question.category', 'academicYear'])
                         ->orderBy('assessment_date', 'desc')
@@ -25,11 +24,20 @@ class StudentAssessmentController extends Controller
         $chartLabels = [];
         $chartData = [];
 
+        // 3. Jika ada penilaian terbaru, kelompokkan detailnya berdasarkan kategori
         if ($latestAssessment) {
-            foreach ($latestAssessment->details as $detail) {
-                // PERBAIKAN: Akses melalui question dulu
-                $chartLabels[] = $detail->question->category->name ?? 'Unknown';
-                $chartData[] = $detail->score;
+            $groupedByCategory = $latestAssessment->details->groupBy(function($detail) {
+                return $detail->question->category->name ?? 'Lain-lain';
+            });
+
+            // Loop setiap kategori yang sudah dikelompokkan
+            foreach ($groupedByCategory as $categoryName => $details) {
+                $chartLabels[] = $categoryName;
+                
+                // Hitung rata-rata skor untuk kategori ini
+                $averageScore = $details->avg('score');
+                
+                $chartData[] = round($averageScore, 2);
             }
         }
 

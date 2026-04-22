@@ -476,22 +476,26 @@
         }
 
         // Chart
-        @if(!empty($chartData) && count($chartData) > 0)
+     // LOGIKA CHART RATA-RATA KATEGORI
+        @if(!empty($chartData))
         document.addEventListener("DOMContentLoaded", function() {
-            const ctx = document.getElementById('classAverageChart').getContext('2d');
+            const ctxClass = document.getElementById('classAverageChart').getContext('2d');
             
-            new Chart(ctx, {
+            const labels = @json($chartLabels);
+            const dataValues = @json($chartData);
+
+            new Chart(ctxClass, {
                 type: 'bar',
                 data: {
-                    labels: @json($chartLabels),
-                    datasets: [{
+                    labels: labels,
+                    datasets:[{
                         label: 'Rata-rata Nilai',
-                        data: @json($chartData),
-                        backgroundColor: 'rgba(83, 123, 47, 0.7)',
+                        data: dataValues,
+                        backgroundColor: 'rgba(83, 123, 47, 0.7)', // Fern Green Transparan
                         borderColor: '#2D5128',
                         borderWidth: 2,
                         borderRadius: 6,
-                        barPercentage: 0.7,
+                        barPercentage: 0.6,
                     }]
                 },
                 options: {
@@ -505,7 +509,7 @@
                             grid: { color: 'rgba(0, 0, 0, 0.05)' },
                             title: {
                                 display: true,
-                                text: 'Nilai (1-5)',
+                                text: 'Nilai (Skala 5)',
                                 color: '#64748b',
                                 font: { weight: 'bold', size: 12 }
                             }
@@ -513,9 +517,8 @@
                         x: {
                             grid: { display: false },
                             ticks: {
-                                maxRotation: 45,
-                                minRotation: 45,
-                                font: { size: 11 }
+                                font: { size: 12, weight: 'bold', family: 'Poppins' },
+                                color: '#1e293b'
                             }
                         }
                     },
@@ -526,7 +529,7 @@
                             padding: 10,
                             cornerRadius: 8,
                             callbacks: {
-                                label: (context) => `Rata-rata: ${context.raw.toFixed(2)} / 5`
+                                label: (context) => `Rata-rata: ${context.raw.toFixed(2)} / 5 Bintang`
                             }
                         }
                     }

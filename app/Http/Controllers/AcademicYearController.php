@@ -4,18 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\AcademicYear;
 use Illuminate\Http\Request;
-// Tambahkan dua import ini untuk Laravel 11
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 
-// Tambahkan "implements HasMiddleware"
 class AcademicYearController extends Controller implements HasMiddleware
 {
     /**
-     * Tentukan middleware untuk controller ini (Cara Laravel 11)
+     *
      */
     public static function middleware(): array
     {
+        // Middleware untuk memastikan hanya Admin yang bisa mengakses fungsi di controller ini
         return[
             new Middleware(function ($request, $next) {
                 if (auth()->user()->role !== 'admin') {

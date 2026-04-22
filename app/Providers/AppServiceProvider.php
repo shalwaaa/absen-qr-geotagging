@@ -5,6 +5,8 @@ namespace App\Providers;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Request;
+use App\Models\Attendance;
+use App\Observers\AttendanceObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
 public function boot(): void
     {
+        // Daftarkan Observer
+        Attendance::observe(AttendanceObserver::class);
+
         // Deteksi apakah sedang dibuka lewat Cloudflare atau Ngrok
         $host = request()->getHost();
 

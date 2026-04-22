@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GamificationAdminController;
 use App\Http\Controllers\HeadmasterController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\HomeroomController;
@@ -19,6 +20,7 @@ use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
 use App\Http\Controllers\StudentAssessmentController;
+use App\Http\Controllers\StudentGamificationController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherAssessmentController;
 use App\Http\Controllers\UserController;
@@ -28,6 +30,8 @@ use App\Models\Classroom;
 use App\Models\Subject;
 use App\Models\Schedule;
 use Carbon\Carbon;
+
+
 
 
 Route::get('/', function () {
@@ -204,14 +208,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/homeroom', [HomeroomController::class, 'index'])->name('homeroom.index');
     Route::post('/homeroom/leave/{id}', [HomeroomController::class, 'updateStatus'])->name('homeroom.update');
     // manajemen penilaian sikap
-    Route::get('/homeroom/assessments',[TeacherAssessmentController::class, 'index'])->name('teacher.assessments.index');
-    Route::post('/homeroom/assessments', [TeacherAssessmentController::class, 'store'])->name('teacher.assessments.store');
+    Route::get('/homeroom/assessments', [TeacherAssessmentController::class, 'index'])->name('teacher.assessments.index');
+    Route::post('/homeroom/assessments',[TeacherAssessmentController::class, 'store'])->name('teacher.assessments.store');
+    Route::delete('/homeroom/assessments/{id}',[TeacherAssessmentController::class, 'destroy'])->name('teacher.assessments.destroy');
+    // Route::post('/homeroom/assessments', [TeacherAssessmentController::class, 'store'])->name('teacher.assessments.store');
     Route::delete('/homeroom/assessments/{id}',[TeacherAssessmentController::class, 'destroy'])->name('teacher.assessments.destroy');
     Route::get('/homeroom/assessments/print', [TeacherAssessmentController::class, 'printReport'])->name('teacher.assessments.print');
     Route::delete('/assessment-categories/{id}', [AssessmentCategoryController::class, 'destroy'])->name('assessment-categories.destroy');
-    Route::delete('/assessment-categories/{assessment_category}', [AssessmentCategoryController::class, 'destroy'])->name('assessment-categories.destroy');
-    Route::post('/assessment-questions',[\App\Http\Controllers\AssessmentCategoryController::class, 'storeQuestion'])->name('assessment-questions.store');
-    Route::delete('/assessment-questions/{id}', [\App\Http\Controllers\AssessmentCategoryController::class, 'destroyQuestion'])->name('assessment-questions.destroy');
+    Route::post('/assessment-questions',[AssessmentCategoryController::class, 'storeQuestion'])->name('assessment-questions.store');
+    Route::delete('/assessment-questions/{id}', [AssessmentCategoryController::class, 'destroyQuestion'])->name('assessment-questions.destroy');
     // Route Manajemen Tahun Ajaran
     Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('academic-years.index');
     Route::post('/academic-years/{id}/set-active', [AcademicYearController::class, 'setActive'])->name('academic-years.set-active');
@@ -288,6 +293,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/assessment-categories/{id}',[AssessmentCategoryController::class, 'update'])->name('assessment-categories.update');
     Route::post('/assessment-categories/{id}/toggle', [AssessmentCategoryController::class, 'toggleStatus'])->name('assessment-categories.toggle');
     
+    // GAMIFIKASI & INTEGRITAS
+    Route::get('/gamification',[GamificationAdminController::class, 'index'])->name('gamification.index');
+    Route::post('/gamification/rules',[GamificationAdminController::class, 'storeRule'])->name('gamification.rules.store');
+    Route::delete('/gamification/rules/{id}',[GamificationAdminController::class, 'destroyRule'])->name('gamification.rules.destroy');
+    Route::post('/gamification/items', [GamificationAdminController::class, 'storeItem'])->name('gamification.items.store');
+    Route::delete('/gamification/items/{id}',[GamificationAdminController::class, 'destroyItem'])->name('gamification.items.destroy');
+    
+    // ROUTE DOMPET SISWA 
+    Route::get('/my-wallet', [StudentGamificationController::class, 'index'])->name('student.wallet');
+    Route::post('/my-wallet/purchase/{id}',[StudentGamificationController::class, 'purchase'])->name('student.wallet.purchase');
 });
 
 // Route untuk testing

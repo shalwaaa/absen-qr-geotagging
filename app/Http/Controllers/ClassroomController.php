@@ -43,6 +43,8 @@ class ClassroomController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
+
         // Validasi input
         $request->validate([
             'name' => 'required|string|max:255',

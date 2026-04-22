@@ -6,10 +6,11 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasApiTokens, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -71,5 +72,14 @@ class User extends Authenticatable
     public function myAssessments()
     {
         return $this->hasMany(Assessment::class, 'evaluatee_id');
+    }
+
+    // 5. Relasi Gamifikasi
+    public function ledgers() {
+        return $this->hasMany(PointLedger::class)->orderBy('created_at', 'desc');
+    }
+    // 6. Relasi ke UserToken
+    public function tokens() {
+        return $this->hasMany(UserToken::class);
     }
 }

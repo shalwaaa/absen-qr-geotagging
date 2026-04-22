@@ -7,6 +7,7 @@ use App\Models\Meeting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
 
 class AttendanceController extends Controller
 {
@@ -41,38 +42,21 @@ class AttendanceController extends Controller
                               ->first();
 
             // Validasi Dasar Meeting
-            if (!$meeting) {
-                return response()->json(['status' => 'error', 'message' => 'QR Code Salah/Tidak Ditemukan.'], 404);
-            }
+            if (!$meeting) return response()->json(['status' => 'error', 'message' => 'QR Code Salah/Tidak Ditemukan.'], 404);
+            if (!$meeting->is_active) return response()->json(['status' => 'error', 'message' => 'Sesi absensi sudah ditutup Guru.'], 400);
+            if (!$meeting->schedule || !$meeting->schedule->classroom) return response()->json(['status' => 'error', 'message' => 'Data Jadwal/Kelas tidak lengkap.'], 500);
 
-            if (!$meeting->is_active) {
-                return response()->json(['status' => 'error', 'message' => 'Sesi absensi sudah ditutup Guru.'], 400);
-            }
-
-            if (!$meeting->schedule || !$meeting->schedule->classroom) {
-                return response()->json(['status' => 'error', 'message' => 'Data Jadwal/Kelas tidak lengkap.'], 500);
-            }
-
-            
             // VALIDASI KELAS SISWA (Anti Salah Masuk Kelas)
             $studentClassId = Auth::user()->classroom_id;
             $meetingClassId = $meeting->schedule->classroom_id;
 
-            // Cek apakah siswa memiliki kelas
             if (!$studentClassId) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Anda belum terdaftar di kelas manapun. Hubungi Admin.'
-                ], 403);
+                return response()->json(['status' => 'error', 'message' => 'Anda belum terdaftar di kelas manapun. Hubungi Admin.'], 403);
             }
 
-            // Cek apakah kelas siswa sama dengan kelas meeting
             if ($studentClassId != $meetingClassId) {
                 $studentClassName = Auth::user()->classroom->name ?? '-';
-                return response()->json([
-                    'status' => 'error',
-                    'message' => "Anda siswa kelas $studentClassName. Tidak bisa absen di kelas ini."
-                ], 403);
+                return response()->json(['status' => 'error', 'message' => "Anda siswa kelas $studentClassName. Tidak bisa absen di kelas ini."], 403);
             }
 
             // Validasi Double Absen
@@ -87,53 +71,75 @@ class AttendanceController extends Controller
             $classroom = $meeting->schedule->classroom;
             $radiusAllowed = $classroom->radius_meters;
 
-            // Hitung Jarak 1
-            $distance1 = $this->calculateDistance(
-                $request->latitude, 
-                $request->longitude, 
-                $classroom->latitude, 
-                $classroom->longitude
-            );
-
-            // Hitung Jarak 2 (Jika ada)
-            $distance2 = $classroom->latitude2 ? $this->calculateDistance(
-                $request->latitude, 
-                $request->longitude, 
-                $classroom->latitude2, 
-                $classroom->longitude2
-            ) : 999999; // Angka besar jika tidak ada lokasi 2
-
-            // Ambil jarak terdekat
+            $distance1 = $this->calculateDistance($request->latitude, $request->longitude, $classroom->latitude, $classroom->longitude);
+            $distance2 = $classroom->latitude2 ? $this->calculateDistance($request->latitude, $request->longitude, $classroom->latitude2, $classroom->longitude2) : 999999;
             $minDistance = min($distance1, $distance2);
 
-            Log::info("Absen Siswa: " . Auth::user()->name . " | Jarak 1: $distance1 | Jarak 2: $distance2 | Final: $minDistance");
+            Log::info("Absen Siswa: " . Auth::user()->name . " | Jarak Terdekat: $minDistance m");
 
-            // Validasi Jarak
             if ($minDistance > $radiusAllowed) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Jarak terlalu jauh! Anda berjarak ' . round($minDistance) . 'm dari lokasi terdekat. (Maks: ' . $radiusAllowed . 'm)'
-                ], 400);
+                return response()->json(['status' => 'error', 'message' => 'Jarak terlalu jauh! Anda berjarak ' . round($minDistance) . 'm. (Maks: ' . $radiusAllowed . 'm)'], 400);
             }
 
-            // SIMPAN DATA
-            Attendance::create([
+            // ========================================================
+            // LOGIKA ABSEN TELAT DENGAN TOKEN BEBAS TELAT
+            // ========================================================
+            $now = Carbon::now('Asia/Jakarta');
+            $scheduleStart = Carbon::parse($meeting->schedule->start_time, 'Asia/Jakarta');
+            
+            // Toleransi telat 15 menit
+            $lateThreshold = $scheduleStart->copy()->addMinutes(15);
+            
+            $status = 'present'; // Default: Hadir
+            $usedToken = null;
+
+            // JIKA WAKTU SCAN MELEBIHI BATAS TOLERANSI
+            if ($now->greaterThan($lateThreshold)) {
+                $status = 'late'; // Ubah status jadi telat
+                
+                // CEK TAS SISWA: Punya Token Bebas Telat nggak?
+                $token = \App\Models\UserToken::where('user_id', Auth::id())
+                            ->where('status', 'AVAILABLE')
+                            ->whereHas('item', function($q) {
+                                $q->where('item_type', 'late_pass'); 
+                            })->first();
+
+                if ($token) {
+                    $status = 'present'; // DIMAAFKAN! Status balik jadi Hadir
+                    $usedToken = $token; // Tandai token ini untuk dihanguskan
+                }
+            }
+
+            // ========================================================
+            // SIMPAN DATA ABSENSI (HANYA SEKALI DISINI)
+            // ========================================================
+            $attendance = Attendance::create([
                 'meeting_id' => $meeting->id,
                 'student_id' => Auth::id(),
-                'status' => 'present',
+                'status' => $status, // Status dinamis (present / late)
                 'latitude_student' => $request->latitude,
                 'longitude_student' => $request->longitude,
-                'distance_meters' => $minDistance, 
-                'scan_time' => now(),
+                'distance_meters' => $minDistance,
+                'scan_time' => $now,
             ]);
 
-            // Respon Sukses dengan Jarak
+            // HANGUSKAN TOKEN JIKA DIPAKAI
+            $pesanTambahan = '';
+            if ($usedToken) {
+                $usedToken->update([
+                    'status' => 'USED',
+                    'used_at_attendance_id' => $attendance->id
+                ]);
+                $pesanTambahan = '<br><small>(Menggunakan Token Bebas Telat!)</small>';
+            }
+
+            // Berikan balasan sukses ke HP Siswa
+            $teksStatus = $status == 'late' ? 'TERLAMBAT' : 'TEPAT WAKTU';
             return response()->json([
                 'status' => 'success',
-                'message' => 'Berhasil! Jarak: ' . round($minDistance) . 'm'
+                'message' => "Hadir ($teksStatus) dengan jarak " . round($minDistance) . "m. $pesanTambahan"
             ]);
 
-            // Catatan: Jika ingin menyimpan data tambahan seperti user agent, waktu scan, dll, bisa ditambahkan di sini.
         } catch (\Exception $e) {
             Log::error("Error Absensi: " . $e->getMessage());
             return response()->json([

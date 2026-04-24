@@ -82,4 +82,14 @@ class User extends Authenticatable
     public function tokens() {
         return $this->hasMany(UserToken::class);
     }
+    // 7.Relasi untuk Helpdesk
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class, 'user_id');
+    }
+    // 8. Relasi untuk Operator melihat tiket yang diambil alih
+    public function operatorTickets()
+    {
+        return $this->hasMany(Ticket::class, 'operator_id');
+    }
 }

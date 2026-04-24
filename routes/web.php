@@ -16,6 +16,7 @@ use App\Http\Controllers\HomeroomController;
 use App\Http\Controllers\LeaveRequestController;
 use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\MonitoringController;
+use App\Http\Controllers\OperatorTicketController;
 use App\Http\Controllers\PromotionController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScheduleController;
@@ -24,7 +25,7 @@ use App\Http\Controllers\StudentGamificationController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherAssessmentController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Controllers\UserTicketController;
 use App\Models\User;
 use App\Models\Classroom;
 use App\Models\Subject;
@@ -47,8 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             if ($role == 'teacher') {
                 return redirect()->route('teacher.dashboard');
-            } 
-            
+            }
+
             elseif ($role == 'admin') {
             // 1. Statistik Utama
             $jumlah_siswa = User::where('role', 'student')->count();
@@ -58,11 +59,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             // 2. LOGIK GRAFIK PER JURUSAN
             // Ambil Tingkat dari Request (Default: Kelas 10)
-            $selectedGrade = request('grade', 10); 
+            $selectedGrade = request('grade', 10);
 
             // Daftar Jurusan (Sesuaikan dengan singkatan di nama kelas)
             $majors = ['PPLG', 'TJKT', 'MPLB', 'AKKUL', 'PS'];
-            
+
             // Bulan (6 Bulan Terakhir)
             $months = [];
             $chartLabels = [];
@@ -83,7 +84,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 $classes = Classroom::where('grade_level', $selectedGrade)
                             ->where('name', 'LIKE', "%$major%")
                             ->get();
-                
+
                 $datasets = [];
 
                 foreach ($classes as $idx => $class) {
@@ -97,7 +98,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                                 ->whereMonth('scan_time', $month->month)
                                 ->whereYear('scan_time', $month->year)
                                 ->count();
-                        
+
                         // Hitung Kapasitas (Siswa x Sesi)
                         $siswaCount = $class->students()->where('role', 'student')->count();
                         $sesiCount = \App\Models\Meeting::whereHas('schedule', function($q) use ($class) {
@@ -138,10 +139,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 'charts', 'selectedGrade'
             ));
         }
-        
+
     else {
         // LOGIC DATA DASHBOARD SISWA
-        
+
         $userId = Auth::id();
         $currentMonth = Carbon::now()->month;
         $currentYear = Carbon::now()->year;
@@ -161,14 +162,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
                         ->count();
 
         // Hindari pembagian dengan nol
-        $persentase = $totalPertemuan > 0 
-            ? round(($totalHadir / $totalPertemuan) * 100) 
+        $persentase = $totalPertemuan > 0
+            ? round(($totalHadir / $totalPertemuan) * 100)
             : 0;
 
         return view('student.dashboard', compact('totalHadir', 'persentase'));
     }
-    
+
     })->name('dashboard');
+
+    Route::middleware(['auth'])->prefix('admin/helpdesk')->name('admin.helpdesk.')->group(function () {
+        // Route Baru khusus Analitik Helpdesk
+        Route::get('/analytics', [App\Http\Controllers\AdminHelpdeskController::class, 'index'])->name('index');
+    });
 
     // ROUTE KHUSUS GURU
     Route::get('/teacher/dashboard', [MeetingController::class, 'index'])->name('teacher.dashboard');
@@ -176,7 +182,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/meetings/{id}', [MeetingController::class, 'show'])->name('meetings.show');
     Route::post('/meetings/{id}/toggle', [MeetingController::class, 'toggleStatus'])->name('meetings.toggle');
 
-    // Route Dashboard GURU PIKET 
+    // Route Dashboard GURU PIKET
     Route::get('/teacher/piket', [MeetingController::class, 'piketIndex'])->name('teacher.piket');
 
     // ROUTE KHUSUS SISWA
@@ -191,12 +197,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     //mata pelajaran
     Route::resource('subjects', SubjectController::class);
-    
+
     // manajemen user
     Route::delete('/users/delete-all', [UserController::class, 'deleteAll'])->name('users.delete_all');
     Route::resource('users', UserController::class);
     Route::post('users/import', [UserController::class, 'import'])->name('users.import');
-    
+
     // manajemen jadwal
     Route::resource('schedules', ScheduleController::class);
     Route::get('schedules/classroom/{classroom}', [ScheduleController::class, 'classroomShow'])->name('schedules.classroom.show');
@@ -225,7 +231,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/promotions', [PromotionController::class, 'index'])->name('promotions.index');
     Route::post('/promotions', [PromotionController::class, 'process'])->name('promotions.process');
     Route::get('/api/students/{classroomId}', [PromotionController::class, 'getStudents']);
-  
+
     // Laporan
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::post('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
@@ -250,7 +256,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/holidays', [HolidayController::class, 'index'])->name('holidays.index');
     Route::post('/holidays', [HolidayController::class, 'store'])->name('holidays.store');
     Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
-    
+
     // Khusus Sync API LIBUR NASIONAL
     Route::post('/holidays/sync', [HolidayController::class, 'syncNational'])->name('holidays.sync');
     Route::delete('/holidays/{id}', [HolidayController::class, 'destroy'])->name('holidays.destroy');
@@ -262,16 +268,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('sync')->group(function () {
         // Halaman utama sinkronisasi
         Route::get('/', [ApiSyncController::class, 'index'])->name('sync.index');
-        
+
         // Proses sinkronisasi (POST request)
         Route::post('/data', [ApiSyncController::class, 'sync'])->name('sync.data');
-        
+
         // Progress tracking (AJAX)
         Route::get('/progress', [ApiSyncController::class, 'progress'])->name('sync.progress');
-        
+
         // Cleanup tahun kosong
         Route::post('/cleanup', [ApiSyncController::class, 'cleanup'])->name('sync.cleanup');
-        
+
         // Debug API
         Route::get('/debug', [ApiSyncController::class, 'debugApi'])->name('sync.debug');
     });
@@ -292,17 +298,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/assessment-categories', [AssessmentCategoryController::class, 'store'])->name('assessment-categories.store');
     Route::put('/assessment-categories/{id}',[AssessmentCategoryController::class, 'update'])->name('assessment-categories.update');
     Route::post('/assessment-categories/{id}/toggle', [AssessmentCategoryController::class, 'toggleStatus'])->name('assessment-categories.toggle');
-    
+
     // GAMIFIKASI & INTEGRITAS
     Route::get('/gamification',[GamificationAdminController::class, 'index'])->name('gamification.index');
     Route::post('/gamification/rules',[GamificationAdminController::class, 'storeRule'])->name('gamification.rules.store');
     Route::delete('/gamification/rules/{id}',[GamificationAdminController::class, 'destroyRule'])->name('gamification.rules.destroy');
     Route::post('/gamification/items', [GamificationAdminController::class, 'storeItem'])->name('gamification.items.store');
     Route::delete('/gamification/items/{id}',[GamificationAdminController::class, 'destroyItem'])->name('gamification.items.destroy');
-    
-    // ROUTE DOMPET SISWA 
+
+    // ROUTE DOMPET SISWA
     Route::get('/my-wallet', [StudentGamificationController::class, 'index'])->name('student.wallet');
     Route::post('/my-wallet/purchase/{id}',[StudentGamificationController::class, 'purchase'])->name('student.wallet.purchase');
+
+        // RUTE UNTUK PELAPOR (Siswa / Guru Biasa)
+    Route::get('/my-tickets',[UserTicketController::class, 'index'])->name('user.tickets.index');
+    Route::get('/my-tickets/create',[UserTicketController::class, 'create'])->name('user.tickets.create');
+    Route::get('/my-tickets/search-similar', [UserTicketController::class, 'searchSimilar'])->name('user.tickets.search');
+    Route::post('/my-tickets', [UserTicketController::class, 'store'])->name('user.tickets.store');
+    Route::get('/my-tickets/{id}', [UserTicketController::class, 'show'])->name('user.tickets.show');
+    Route::post('/my-tickets/{id}/reply', [UserTicketController::class, 'reply'])->name('user.tickets.reply');
+    Route::post('/tickets/{id}/rate', [UserTicketController::class, 'rate'])->name('user.tickets.rate');
+
+
+
+    // RUTE UNTUK OPERATOR / ADMIN
+    Route::get('/helpdesk', [OperatorTicketController::class, 'index'])->name('operator.tickets.index');
+    Route::get('/helpdesk/{id}',[OperatorTicketController::class, 'show'])->name('operator.tickets.show');
+    Route::post('/helpdesk/{id}/take',[OperatorTicketController::class, 'takeTicket'])->name('operator.tickets.take');
+    Route::post('/helpdesk/{id}/reply',[OperatorTicketController::class, 'reply'])->name('operator.tickets.reply');
+    Route::post('/helpdesk/{id}/close',[OperatorTicketController::class, 'closeTicket'])->name('operator.tickets.close');
 });
 
 // Route untuk testing

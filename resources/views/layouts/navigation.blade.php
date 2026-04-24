@@ -14,7 +14,7 @@
         /* SIDEBAR MAIN STYLES */
         .sidebar {
             width: 280px;
-            height: calc(100vh - 40px); 
+            height: calc(100vh - 40px);
             position: fixed;
             left: 20px;
             top: 20px;
@@ -25,7 +25,7 @@
             display: flex;
             flex-direction: column;
             padding: 2rem 1.2rem;
-            border-radius: 24px; 
+            border-radius: 24px;
             border: 1px solid rgba(45, 81, 40, 0.15);
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
             z-index: 1050;
@@ -44,13 +44,13 @@
 
         .sidebar-logo {
             display: flex;
-            align-items: center; 
+            align-items: center;
             gap: 0.8rem;
             text-decoration: none;
         }
 
         .logo-icon {
-            height: 52px; 
+            height: 52px;
             width: auto;
         }
 
@@ -58,7 +58,7 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
-            margin-top: 6px; 
+            margin-top: 6px;
             line-height: 1;
         }
 
@@ -110,7 +110,7 @@
         }
 
         .sidebar-link i {
-            width: 30px; 
+            width: 30px;
             display: inline-flex;
             justify-content: center;
             align-items: center;
@@ -197,15 +197,15 @@
         @media (max-width: 1024px) {
             .sidebar {
                 transform: translateX(-100%);
-                left: 0; 
-                top: 0; 
-                height: 100vh; 
+                left: 0;
+                top: 0;
+                height: 100vh;
                 width: 300px;
-                border-radius: 0 24px 24px 0; 
+                border-radius: 0 24px 24px 0;
                 border-left: none;
                 padding-top: 80px;
             }
-            
+
             .sidebar.sidebar-open {
                 transform: translateX(0) !important;
             }
@@ -227,18 +227,27 @@
 
 
         <!-- === MENU ADMIN === -->
-        
+
         @if(Auth::user()->role === 'admin')
-                <div class="sidebar-section">Utama</div>
-        <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <i class="fa-solid fa-house"></i> Dashboard
-        </a>
-            <div class="sidebar-section">Manajemen</div>
+            <div class="sidebar-section">Utama</div>
+            <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <i class="fa-solid fa-house"></i> Dashboard
+            </a>
+
+             <a href="{{ route('admin.helpdesk.index') }}" class="sidebar-link {{ request()->routeIs('admin.helpdesk.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-chart-line"></i>Analitik Helpdesk
+            </a>
             
+            <a href="{{ route('operator.tickets.index') }}" class="sidebar-link {{ request()->routeIs('operator.tickets.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-headset"></i> Tiket Bantuan
+            </a>
+
+            <div class="sidebar-section">Manajemen</div>
+
             <a href="{{ route('users.index', ['type' => 'teacher']) }}" class="sidebar-link {{ request()->fullUrlIs(route('users.index', ['type'=>'teacher']).'*') ? 'active' : '' }}">
                 <i class="fa-solid fa-chalkboard-user"></i> Data Guru
             </a>
-            
+
             <a href="{{ route('users.index', ['type' => 'student']) }}" class="sidebar-link {{ request()->fullUrlIs(route('users.index', ['type'=>'student']).'*') ? 'active' : '' }}">
                 <i class="fa-solid fa-user-graduate"></i> Data Siswa
             </a>
@@ -250,7 +259,7 @@
             <a href="{{ route('assessment-categories.index') }}" class="sidebar-link {{ request()->routeIs('assessment-categories.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-list-check"></i> Kategori Penilaian
             </a>
-            
+
             <a href="{{ route('classrooms.index') }}" class="sidebar-link {{ request()->routeIs('classrooms.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-school"></i> Kelas & Lokasi
             </a>
@@ -280,7 +289,7 @@
             <a href="{{ route('holidays.index') }}" class="sidebar-link {{ request()->routeIs('holidays.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-calendar-xmark"></i> Hari Libur
             </a>
-            
+
             <div class="sidebar-section">Laporan</div>
             <a href="{{ route('reports.index') }}" class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-file-lines"></i> Laporan Kehadiran
@@ -289,12 +298,14 @@
             <a href="{{ route('gamification.index') }}" class="sidebar-link {{ request()->routeIs('gamification.*') ? 'active' : '' }}">
                 <i class="fa-solid fa-gamepad"></i> Dompet Integritas
             </a>
+
+
         @endif
 
         <!-- === MENU GURU === -->
         @if(Auth::user()->role == 'teacher')
             <div class="sidebar-section">Aktifitas</div>
-            
+
             <a href="{{ route('teacher.dashboard') }}" class="sidebar-link {{ request()->routeIs('teacher.dashboard') ? 'active' : '' }}">
                 <i class="fa-solid fa-calendar-check"></i> Jadwal Saya
             </a>
@@ -308,7 +319,7 @@
             @php
                 $isHomeroom = \App\Models\Classroom::where('homeroom_teacher_id', Auth::id())->exists();
             @endphp
-            
+
             @if($isHomeroom)
                 <a href="{{ route('homeroom.index') }}" class="sidebar-link {{ request()->routeIs('homeroom.*') ? 'active' : '' }}">
                     <i class="fa-solid fa-users-rectangle"></i> Wali Kelas
@@ -339,12 +350,17 @@
             <a href="{{ route('calendar.index') }}" class="sidebar-link {{ request()->routeIs('calendar.*') ? 'active' : '' }}">
                 <i class="fa-regular fa-calendar-days"></i> Kalender
             </a>
+
+            <div class="sidebar-section">Pusat Bantuan</div>
+            <a href="{{ route('user.tickets.index') }}" class="sidebar-link {{ request()->routeIs('user.tickets.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-headset"></i> Tiket Bantuan
+            </a>
         @endif
 
         <!-- === MENU SISWA === -->
         @if(Auth::user()->role == 'student')
             <div class="sidebar-section">Aktifitas</div>
-            
+
             <a href="{{ route('attendance.scan') }}" class="sidebar-link {{ request()->routeIs('attendance.scan') ? 'active' : '' }}">
                 <i class="fa-solid fa-qrcode"></i> Scan Masuk
             </a>
@@ -367,6 +383,9 @@
             <a href="{{ route('student.assessments') }}" class="sidebar-link {{ request()->routeIs('student.assessments') ? 'active' : '' }}">
                 <i class="fa-solid fa-chart-line"></i> Rapor Karakter
             </a>
+            <a href="{{ route('user.tickets.index') }}" class="sidebar-link {{ request()->routeIs('user.tickets.*') ? 'active' : '' }}">
+                <i class="fa-solid fa-headset"></i> Pusat Bantuan
+            </a>
         @endif
     </nav>
 
@@ -374,7 +393,7 @@
         <div class="user-avatar">
             {{ date('d') }}
         </div>
-        
+
         <div class="user-details">
             <span class="user-name">
                 {{ \Carbon\Carbon::now()->locale('id')->translatedFormat('l') }}
